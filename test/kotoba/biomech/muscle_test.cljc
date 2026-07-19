@@ -49,3 +49,12 @@
   (let [p  (muscle/make-params)
         st (muscle/make-state 0.20 0.05)]
     (is (= st (muscle/step st p 0.5 0.0)))))
+
+(deftest force-length-factor-test
+  ;; Hill force-length: peak at optimal length, parabolic fall-off, ~0 at
+  ;; the [0.5, 1.5]*optimal edges.
+  (let [opt (:optimal-length (muscle/make-params))]
+    (is (rel= (muscle/force-length-factor opt opt) 1.0))            ; peak
+    (is (rel= (muscle/force-length-factor (* 1.25 opt) opt) 0.75))  ; quarter off
+    (is (zero? (muscle/force-length-factor (* 1.5 opt) opt)))       ; upper edge
+    (is (zero? (muscle/force-length-factor (* 0.5 opt) opt)))))     ; lower edge

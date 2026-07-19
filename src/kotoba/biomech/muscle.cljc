@@ -27,7 +27,8 @@
    :passive-stiffness 200.0        ; N/m
    :damping 5.0                    ; N·s/m
    :active-max-force 1000.0        ; N
-   :rest-length 0.15})             ; m
+   :rest-length 0.15               ; m
+   :optimal-length 0.15})          ; m, peak of the active force-length curve
 
 (defn make-state
   "Initial muscle state. length [m], velocity [m/s] (default 0)."
@@ -43,22 +44,34 @@
 (defn- clip-activation [a]
   (let [x (double a)] (max 0.0 (min 1.0 x))))
 
+(defn force-length-factor
+  "Hill-type active force-length scaling: the active contractile force peaks
+  at the muscle's optimal length and falls off as a parabola outside the
+  physiological range. Returns a multiplier in [0, 1] — 1.0 at length =
+  optimal-length, ~0 outside [0.5, 1.5] * optimal-length."
+  [length optimal-length]
+  (let [ratio (/ (double length) (double optimal-length))]
+    (max 0.0 (- 1.0 (* 4.0 (- ratio 1.0) (- ratio 1.0))))))
+
 (defn acceleration
   "Acceleration [m/s^2] of the mass given state, params, activation (0..1).
 
-  m*a = -k*(L - L0)         ; passive spring restoring (toward L0)
-        - c*v               ; viscous damping (opposes velocity)
-        - act*Fmax          ; active contractile pull (toward origin)
+  m*a = -k*(L - L0)              ; passive spring restoring (toward L0)
+        - c*v                    ; viscous damping (opposes velocity)
+        - act*fl(L)*Fmax         ; active contractile pull (toward origin),
+                                 ; scaled by Hill force-length factor fl
 
   i.e. for a stretched (L > L0), outward-moving (v > 0), activating
   muscle, all three force contributions are negative — sign kept explicit
   so the physics reads."
   [{:keys [length velocity]}
-   {:keys [mass passive-stiffness damping active-max-force rest-length]}
+   {:keys [mass passive-stiffness damping active-max-force rest-length optimal-length]}
    activation]
-  (let [f-spring (* -1.0 passive-stiffness (- length rest-length))
-        f-damper (* -1.0 damping velocity)
-        f-active (* -1.0 (clip-activation activation) active-max-force)]
+  (let [opt       (or optimal-length rest-length)
+        f-spring  (* -1.0 passive-stiffness (- length rest-length))
+        f-damper  (* -1.0 damping velocity)
+        fl        (force-length-factor length opt)
+        f-active  (* -1.0 (clip-activation activation) fl active-max-force)]
     (/ (+ f-spring f-damper f-active) mass)))
 
 (defn step

@@ -1,0 +1,26 @@
+;; kotoba-lang/biomech — biomechanics simulation domain layer.
+;;
+;; 筋肉・骨・皮膚・内臓の組織物性データ + 簡易 sim。pure portable .cljc, zero-dep.
+;;
+;; Phase 1 (this repo, this commit):
+;;   - tissue-property domain (muscle / bone / skin / organ の材料定数)
+;;   - closed-form / mass-spring sim examples (zero-dep 純 Clojure)
+;; Phase 2 (follow-up commits, :local/root で既存 solver を消費):
+;;   - kotoba-lang/fea            — 骨の FEM (linear-static)
+;;   - kotoba-lang/kami-vehicle   — soft-body / mass-spring (筋肉・皮膚)
+;;   - kotoba-lang/kami-engine-cfd — 血流・気流 (Lattice-Boltzmann CFD)
+;;   - kotoba-lang/kami-engine     — 熱・水分 (DEC voxel PDE)
+;; Phase 2 の依存を足す時は、deps.edn に
+;;   io.github.kotoba-lang/fea {:local/root "../fea"}
+;; を追加し、CI (ci.yml) で `git clone --depth 1 ../fea` する (host の ci.yml 参照)。
+{:paths ["src" "resources"]
+ :deps {org.clojure/clojure {:mvn/version "1.11.1"}
+        org.clojure/clojurescript {:mvn/version "1.11.132"}}
+ :aliases
+ {:test {:extra-paths ["test"]
+         :extra-deps {io.github.cognitect-labs/test-runner
+                      {:git/tag "v0.5.1" :git/sha "dfb30dd"}}
+         :main-opts ["-m" "cognitect.test-runner"]
+         :exec-fn cognitect.test-runner.api/test}
+  :lint {:replace-deps {clj-kondo/clj-kondo {:mvn/version "2024.11.14"}}
+         :main-opts ["-m" "clj-kondo.main" "--lint" "src" "test" "--fail-level" "error"]}}}

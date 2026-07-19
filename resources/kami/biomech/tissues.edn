@@ -1,0 +1,51 @@
+{:tissues
+ [{:name "Cortical-Bone"
+   :tissue-type :bone
+   :sub-type :cortical
+   :model {:type :linear-elastic
+           :youngs-modulus 1.7e10
+           :poissons-ratio 0.30
+           :density 1900}
+   :source "representative literature value; cortical bone E in [15,20] GPa, density approx 1800-2000 kg/m^3"}
+
+  {:name "Cancellous-Bone"
+   :tissue-type :bone
+   :sub-type :cancellous
+   :model {:type :linear-elastic
+           :youngs-modulus 5.0e8
+           :poissons-ratio 0.30
+           :density 800}
+   :source "representative; cancellous (trabecular) bone E in [0.1,1] GPa, density approx 500-1000 kg/m^3"}
+
+  {:name "Skeletal-Muscle"
+   :tissue-type :muscle
+   :model {:type :viscoelastic
+           :shear-modulus 1.0e4
+           :youngs-modulus 3.0e4
+           :poissons-ratio 0.45
+           :density 1060}
+   :source "representative; passive skeletal muscle shear modulus approx 10-50 kPa, near-incompressible (nu approx 0.49 in vivo); effective E shown is 3G for isotropic reference only"}
+
+  {:name "Skin"
+   :tissue-type :skin
+   :model {:type :hyperelastic
+           :youngs-modulus 1.0e5
+           :poissons-ratio 0.45
+           :density 1100}
+   :source "representative; skin low-strain effective E in [50,150] kPa, stiffens strongly with strain (hyperelastic)"}
+
+  {:name "Liver"
+   :tissue-type :organ
+   :model {:type :hyperelastic
+           :youngs-modulus 3.0e3
+           :poissons-ratio 0.45
+           :density 1060}
+   :source "representative; liver E in [1,5] kPa per MR elastography, near-incompressible"}
+
+  {:name "Tendon"
+   :tissue-type :tendon
+   :model {:type :linear-elastic
+           :youngs-modulus 1.2e9
+           :poissons-ratio 0.40
+           :density 1100}
+   :source "representative; tendon E in [0.8,1.5] GPa along fibre direction"}]}

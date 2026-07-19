@@ -58,3 +58,11 @@
     (is (rel= (muscle/force-length-factor (* 1.25 opt) opt) 0.75))  ; quarter off
     (is (zero? (muscle/force-length-factor (* 1.5 opt) opt)))       ; upper edge
     (is (zero? (muscle/force-length-factor (* 0.5 opt) opt)))))     ; lower edge
+
+(deftest force-velocity-factor-test
+  ;; Hill force-velocity (concentric): 1 at isometric, falls to 0 at v_max.
+  (let [vmax 1.0]
+    (is (rel= (muscle/force-velocity-factor 0.0 vmax) 1.0))      ; isometric
+    (is (rel= (muscle/force-velocity-factor -0.5 vmax) 0.5))     ; half max shortening
+    (is (zero? (muscle/force-velocity-factor -1.0 vmax)))        ; at v_max -> 0
+    (is (rel= (muscle/force-velocity-factor 0.5 vmax) 1.0))))    ; eccentric capped

@@ -28,7 +28,8 @@
    :damping 5.0                    ; N·s/m
    :active-max-force 1000.0        ; N
    :rest-length 0.15               ; m
-   :optimal-length 0.15})          ; m, peak of the active force-length curve
+   :optimal-length 0.15            ; m, peak of the active force-length curve
+   :max-shortening-velocity 1.0})  ; m/s, |v| at which active force -> 0
 
 (defn make-state
   "Initial muscle state. length [m], velocity [m/s] (default 0)."
@@ -53,6 +54,18 @@
   (let [ratio (/ (double length) (double optimal-length))]
     (max 0.0 (- 1.0 (* 4.0 (- ratio 1.0) (- ratio 1.0))))))
 
+(defn force-velocity-factor
+  "Hill force-velocity (concentric): active force falls linearly toward 0 as
+  shortening velocity grows, reaching 0 at v = -v-max. Eccentric
+  (lengthening, v > 0) is capped at 1.0 — no eccentric boost in this
+  simplified lumped model. v is muscle length velocity [m/s] (negative =
+  shortening)."
+  [v v-max]
+  (let [v (double v) vmax (double v-max)]
+    (if (neg? v)
+      (max 0.0 (/ (+ vmax v) vmax))   ; 1 at v=0, 0 at v=-vmax
+      1.0)))
+
 (defn acceleration
   "Acceleration [m/s^2] of the mass given state, params, activation (0..1).
 
@@ -65,13 +78,15 @@
   muscle, all three force contributions are negative — sign kept explicit
   so the physics reads."
   [{:keys [length velocity]}
-   {:keys [mass passive-stiffness damping active-max-force rest-length optimal-length]}
+   {:keys [mass passive-stiffness damping active-max-force rest-length optimal-length max-shortening-velocity]}
    activation]
   (let [opt       (or optimal-length rest-length)
+        vmax      (or max-shortening-velocity 1.0)
         f-spring  (* -1.0 passive-stiffness (- length rest-length))
         f-damper  (* -1.0 damping velocity)
         fl        (force-length-factor length opt)
-        f-active  (* -1.0 (clip-activation activation) fl active-max-force)]
+        fv        (force-velocity-factor velocity vmax)
+        f-active  (* -1.0 (clip-activation activation) fl fv active-max-force)]
     (/ (+ f-spring f-damper f-active) mass)))
 
 (defn step

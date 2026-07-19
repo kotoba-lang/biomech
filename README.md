@@ -7,25 +7,22 @@
 capability library.
 
 専用 repo として存在しなかった（2026-07-19 探索確認: 既存 solver 群はあったが
-人体ドメインを束ねる統合層は無かった）ため、既存の solver 資産
-（fea / kami-vehicle / kami-engine-cfd / kami-engine DEC）を束ねるドメイン層として
-起こした。
+人体ドメインを束ねる統合層は無かった）ため、既存の solver 資産を束ねるドメイン層
+として起こした。
 
 No network, no I/O in any `.cljc` domain namespace (the one JVM-only loader,
 `kotoba.biomech.tissue-loader`, reads `resources/kami/biomech/tissues.edn` and
 is split out as a `.clj` exactly like kotoba-lang/fea's `material-loader`).
-Pure data + pure functions, portable `.cljc` across JVM / ClojureScript /
-SCI / GraalVM.
 
 ## Maturity
 
 | | |
 |---|---|
 | Role | capability |
-| Phase | 1 — tissue-property domain + closed-form / mass-spring sim (zero-dep) |
-| Tests | 15 tests, 40 assertions across 3 namespaces, all green |
-| Lint | 0 errors (`clojure -M:lint --fail-level error`) |
-| Scope | tissue-property data + 1-D lumped muscle model + cantilever bone closed-form |
+| Phase | 1 + 2 — tissue domain + closed-form sim + 3 solver backends |
+| Tests | 25 tests, 60 assertions across 6 namespaces, all green |
+| Lint | 0 errors / 0 warnings (`clojure -M:lint --fail-level error`) |
+| Backends | fea (beam2 FEM) · kami-vehicle (mass-spring primitives) · kami-engine-cfd (LBM CFD) |
 
 ## What's here
 
@@ -55,39 +52,68 @@ Euler-Bernoulli beam theory: cantilever tip deflection (`F·L³/3EI`), maximum
 bending stress (`M·c/I`), plus section helpers (second moment of area,
 extreme-fibre distance) for rectangular and solid circular sections.
 
-```clojure
-(require '[kotoba.biomech.osteo :as osteo])
-(def I (osteo/second-moment-area-circle 0.012))           ; r = 12 mm
-(osteo/cantilever-tip-deflection 700.0 0.40 1.7e10 I)     ; femur-scale tip load
-```
-
 ### Lumped muscle model — `kotoba.biomech.muscle`
 
 1-D mass-spring-damper with an active contractile element (Hill-type reduced
 to linear), semi-implicit Euler integrator with sub-stepping.
 
+## Phase 2 — solver backends via `:local/root`
+
+Phase 1 stays zero-dep; Phase 2 consumes the existing solver repos as
+backends. Each `:local/root` dependency is cloned as a sibling by CI
+(kotoba-lang/host `ci.yml` pattern).
+
+### Bone FEM — `kotoba.biomech.fem` → kotoba-lang/fea
+
+Bridges tissue material properties into fea's linear-static **beam2** solver
+(scalar axial bar; A = 1 m²; fea Phase-1 assembles `:beam2` only).
+
 ```clojure
-(require '[kotoba.biomech.muscle :as muscle])
-(def st  (muscle/make-state 0.15))                ; at rest length
-(def p   (muscle/make-params))
-(def out (muscle/simulate st p 1.0 1.0e-3 50))    ; 50 ms, full activation
+(require '[kotoba.biomech.fem :as fem])
+;; 1 m cortical-bone bar, 1000 N axial tension, 4 elements
+;; analytic: delta = F·L/E = 5.88e-8 m, sigma = F = 1000 Pa
+(def res (fem/solve-axial-bar cortical 1.0 1000.0 4))
+(:max-displacement res)   ;=> ~5.88e-8
+(:max-stress res)         ;=> ~1000.0
 ```
 
-## Roadmap (Phase 2 — integrate existing solvers via `:local/root`)
+### Soft tissue — `kotoba.biomech.softbody` → kotoba-lang/kami-vehicle
 
-Phase 1 is deliberately zero-dep so the tissue domain + closed-form references
-stand alone. Phase 2 wires the existing solver repos in as backends:
+A 3-D mass-spring-damper grid for muscle / skin / organ walls. Consumes
+kami-vehicle's `vec3` / `node` / `beam` data primitives; runs its own
+beam-only semi-implicit Euler integrator (kami-vehicle's `vehicle.vehicle/step`
+is vehicle-specific — tire/powertrain/Pacejka — so the generic soft-body
+core is lifted here).
 
-| concern | backend repo | method |
-|---|---|---|
-| bone FEM (3-D, arbitrary geometry) | kotoba-lang/fea | linear-static tet/hex |
-| soft tissue / muscle / skin (large deformation) | kotoba-lang/kami-vehicle | XPBD mass-spring |
-| blood flow / airflow (CFD) | kotoba-lang/kami-engine-cfd | Lattice-Boltzmann (D2Q9/D3Q19) |
-| thermoregulation / moisture | kotoba-lang/kami-engine | DEC voxel PDE |
+```clojure
+(require '[kotoba.biomech.softbody :as softbody])
+;; 3x3 grid, top row anchored, gravity makes the rest sag
+(def grid (-> (softbody/make-grid 3 3 0.1 0.1 100.0 5.0)
+              (softbody/anchor-row 3 0)))
+(def out (softbody/simulate grid 1.0e-3 100))
+```
 
-Phase 2 deps land in `deps.edn` as
-`io.github.kotoba-lang/fea {:local/root "../fea"}` etc., and CI clones each
-dependency as a sibling (see kotoba-lang/host's `ci.yml` for the pattern).
+### Blood / air flow — `kotoba.biomech.hemodynamics` → kotoba-lang/kami-engine-cfd
+
+Bridges into the D2Q9 Lattice-Boltzmann solver: a 2-D channel with no-slip
+walls, inlet velocity, zero-gradient outlet, and an obstacle (vessel cross-
+section / plaque / airway constriction); reads back the drag the flow exerts.
+
+```clojure
+(require '[kotoba.biomech.hemodynamics :as hemodynamics])
+(def body (hemodynamics/channel-with-obstacle 120 40 30 8 12))
+(hemodynamics/obstacle-drag-cd body 100.0 500)   ;=> averaged Cd (finite, positive)
+```
+
+## Roadmap
+
+| phase | concern | backend | status |
+|---|---|---|---|
+| 2 | bone FEM (axial bar) | kotoba-lang/fea | **landed** |
+| 2 | soft tissue mass-spring | kotoba-lang/kami-vehicle | **landed** |
+| 2 | blood / air flow (LBM) | kotoba-lang/kami-engine-cfd | **landed** |
+| 2→3 | bone FEM (3-D tet/hex, bending) | kotoba-lang/fea | blocked on fea element-assembly expansion |
+| 3 | thermoregulation / moisture (DEC voxel PDE) | kotoba-lang/kami-engine | blocked — DEC solver not yet implemented in pure-Clojure kami-engine (former Rust workspace removed) |
 
 3-D rendering of any sim output uses the kotoba-lang/kami-engine stack
 (repo-wide 3D mandate). This repo owns the biomech *domain + simulation*,

@@ -1,21 +1,27 @@
 ;; kotoba-lang/biomech — biomechanics simulation domain layer.
 ;;
-;; 筋肉・骨・皮膚・内臓の組織物性データ + 簡易 sim。pure portable .cljc, zero-dep.
+;; 筋肉・骨・皮膚・内臓の生体力学的な sim を扱う capability library.
 ;;
-;; Phase 1 (this repo, this commit):
-;;   - tissue-property domain (muscle / bone / skin / organ の材料定数)
-;;   - closed-form / mass-spring sim examples (zero-dep 純 Clojure)
-;; Phase 2 (follow-up commits, :local/root で既存 solver を消費):
-;;   - kotoba-lang/fea            — 骨の FEM (linear-static)
-;;   - kotoba-lang/kami-vehicle   — soft-body / mass-spring (筋肉・皮膚)
-;;   - kotoba-lang/kami-engine-cfd — 血流・気流 (Lattice-Boltzmann CFD)
-;;   - kotoba-lang/kami-engine     — 熱・水分 (DEC voxel PDE)
-;; Phase 2 の依存を足す時は、deps.edn に
-;;   io.github.kotoba-lang/fea {:local/root "../fea"}
-;; を追加し、CI (ci.yml) で `git clone --depth 1 ../fea` する (host の ci.yml 参照)。
+;; Phase 1 (zero-dep domain + closed-form / mass-spring sim):
+;;   - kotoba.biomech.tissue  (tissue material-property data)
+;;   - kotoba.biomech.osteo   (Euler-Bernoulli closed-form)
+;;   - kotoba.biomech.muscle  (1-D lumped mass-spring-damper)
+;;
+;; Phase 2 (existing solver backends consumed via :local/root):
+;;   - kotoba.biomech.fem          -> kotoba-lang/fea            (linear-static beam2 FEM)
+;;   - kotoba.biomech.softbody     -> kotoba-lang/kami-vehicle   (XPBD mass-spring; vehicle.node/beam/vec3 + beam-only loop)
+;;   - kotoba.biomech.hemodynamics -> kotoba-lang/kami-engine-cfd (D2Q9 Lattice-Boltzmann CFD)
+;;   (thermoregulation via kotoba-lang/kami-engine DEC is deferred to Phase 3:
+;;    the DEC voxel PDE solver is not yet implemented in pure-Clojure kami-engine
+;;    — the former Rust workspace was removed. See README roadmap.)
+;;
+;; CI clones each :local/root dependency as a sibling (kotoba-lang/host ci.yml pattern).
 {:paths ["src" "resources"]
  :deps {org.clojure/clojure {:mvn/version "1.11.1"}
-        org.clojure/clojurescript {:mvn/version "1.11.132"}}
+        org.clojure/clojurescript {:mvn/version "1.11.132"}
+        io.github.kotoba-lang/fea {:local/root "../fea"}
+        io.github.kotoba-lang/kami-vehicle {:local/root "../kami-vehicle"}
+        io.github.kotoba-lang/kami-engine-cfd {:local/root "../kami-engine-cfd"}}
  :aliases
  {:test {:extra-paths ["test"]
          :extra-deps {io.github.cognitect-labs/test-runner

@@ -48,4 +48,44 @@
            :youngs-modulus 1.2e9
            :poissons-ratio 0.40
            :density 1100}
-   :source "representative; tendon E in [0.8,1.5] GPa along fibre direction"}]}
+   :source "representative; tendon E in [0.8,1.5] GPa along fibre direction"}
+
+  {:name "Cartilage"
+   :tissue-type :cartilage
+   :model {:type :hyperelastic
+           :youngs-modulus 8.0e5
+           :poissons-ratio 0.40
+           :density 1100}
+   :source "representative; articular cartilage compressive aggregate modulus approx 0.5-1.5 MPa, hyperelastic/stiffening under load"}
+
+  {:name "Ligament"
+   :tissue-type :ligament
+   :model {:type :linear-elastic
+           :youngs-modulus 5.0e8
+           :poissons-ratio 0.40
+           :density 1100}
+   :source "representative; ligament E in [0.3,1] GPa along fibre direction"}
+
+  {:name "Arterial-Wall"
+   :tissue-type :vasculature
+   :model {:type :hyperelastic
+           :youngs-modulus 5.0e5
+           :poissons-ratio 0.45
+           :density 1060}
+   :source "representative; arterial wall (media) incremental E approx 0.3-1 MPa, highly anisotropic & hyperelastic"}
+
+  {:name "Brain"
+   :tissue-type :organ
+   :model {:type :hyperelastic
+           :youngs-modulus 3.0e3
+           :poissons-ratio 0.45
+           :density 1040}
+   :source "representative; brain grey matter E approx 1-5 kPa per MR elastography, near-incompressible"}
+
+  {:name "Adipose-Tissue"
+   :tissue-type :organ
+   :model {:type :hyperelastic
+           :youngs-modulus 3.0e3
+           :poissons-ratio 0.45
+           :density 950}
+   :source "representative; adipose tissue E approx 1-5 kPa, near-incompressible"}]}

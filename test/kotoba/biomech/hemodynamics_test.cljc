@@ -15,3 +15,13 @@
         [lbm' drag] (hemodynamics/step-flow lbm)]
     (is (some? lbm'))
     (is (number? drag))))
+
+(deftest velocity-probe-is-finite-test
+  ;; After stepping, the upstream fluid cell has a finite [ux uy].
+  (let [body (hemodynamics/channel-with-obstacle 120 40 30 8 12)
+        lbm  (loop [s 0 l (hemodynamics/new-flow body 100.0)]
+               (if (>= s 30) l (recur (inc s) (first (hemodynamics/step-flow l)))))
+        v    (hemodynamics/velocity-at lbm 10 20)]
+    (is (some? v))
+    (is (number? (first v)))
+    (is (number? (second v)))))

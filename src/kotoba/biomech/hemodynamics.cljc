@@ -35,3 +35,15 @@
   flow resistance (narrower / blunter obstacle)."
   [body re steps]
   (cfd/sectional-cd body re steps))
+
+(defn velocity-at
+  "[ux uy] velocity at lattice position (x, y), or nil if the cell is solid
+  or out of range. Thin pass-through to kami-cfd/velocity-at (now public).
+  Use to read back a flow probe after stepping."
+  [lbm x y]
+  (cfd/velocity-at lbm x y))
+
+(defn density-at
+  "Density rho at lattice position (x, y), or nil if solid / out of range."
+  [lbm x y]
+  (cfd/density-at lbm x y))

@@ -67,3 +67,39 @@
         bcs  [(fea-boundary/displacement "fixed" fea-boundary/dof-all [0.0 0.0 0.0])
               (fea-boundary/force "tip" [(double force) 0.0 0.0])]]
     (fea-solver/solve-linear-static mesh mat bcs)))
+
+;; --- 3-D tet4 path (fea Phase-2: tet4 element assembly) ---
+
+(defn tet4-cube-mesh
+  "Cube [0,L]^3 split into 5 tet4 elements (the standard split along the
+  0-6 body diagonal). Node-set \"fixed\" = bottom face (z=0, nodes 0-3);
+  \"load\" = top face (z=L, nodes 4-7). Returns a fea mesh map."
+  [L]
+  (let [coords [[0.0 0.0 0.0] [L 0.0 0.0] [L L 0.0] [0.0 L 0.0]
+                [0.0 0.0 L] [L 0.0 L] [L L L] [0.0 L L]]
+        {:keys [mesh ids]}
+        (loop [i 0 m (fea-mesh/new-mesh) ids []]
+          (if (= i 8)
+            {:mesh m :ids ids}
+            (let [{:keys [mesh id]} (fea-mesh/add-node m (coords i))]
+              (recur (inc i) mesh (conj ids id)))))]
+    (-> mesh
+        (fea-mesh/add-element (fea-mesh/tet4 0 [(ids 0) (ids 1) (ids 2) (ids 6)]))
+        (fea-mesh/add-element (fea-mesh/tet4 1 [(ids 0) (ids 2) (ids 3) (ids 6)]))
+        (fea-mesh/add-element (fea-mesh/tet4 2 [(ids 0) (ids 3) (ids 7) (ids 6)]))
+        (fea-mesh/add-element (fea-mesh/tet4 3 [(ids 0) (ids 7) (ids 4) (ids 6)]))
+        (fea-mesh/add-element (fea-mesh/tet4 4 [(ids 0) (ids 4) (ids 5) (ids 6)]))
+        (fea-mesh/create-node-set "fixed" [(ids 0) (ids 1) (ids 2) (ids 3)])
+        (fea-mesh/create-node-set "load"   [(ids 4) (ids 5) (ids 6) (ids 7)]))))
+
+(defn solve-tet4-cube
+  "3-D cube of tissue `t`, side L [m], under axial tip load F [N] along +Z
+  (positive = tension). Bottom face (z=0) fixed. Returns fea's result map.
+  Uses fea's tet4 element assembly (3-D elasticity — bending / shear, not
+  just axial), the Phase-2 expansion of fea's solver."
+  [t L force]
+  (let [mesh (tet4-cube-mesh (double L))
+        mat  (tissue->fea-material t)
+        bcs  [(fea-boundary/displacement "fixed" fea-boundary/dof-all [0.0 0.0 0.0])
+              (fea-boundary/force "load" [0.0 0.0 (double force)])]]
+    (fea-solver/solve-linear-static mesh mat bcs)))

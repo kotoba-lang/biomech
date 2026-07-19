@@ -37,3 +37,20 @@
   (let [d1 (:max-displacement (fem/solve-axial-bar cortical 1.0 500.0 4))
         d2 (:max-displacement (fem/solve-axial-bar cortical 1.0 1000.0 4))]
     (is (rel= (/ d2 d1) 2.0 1e-3))))
+
+(deftest tet4-cube-3d-fem-finite-displacement-test
+  ;; 1 cm cortical-bone cube, 10 N +z load, bottom face fixed.
+  ;; 3-D tet4 path (fea tet4 assembly): displacement finite, top moves +z.
+  (let [res (fem/solve-tet4-cube cortical 0.01 10.0)
+        delta (:max-displacement res)
+        top-node-z (nth (nth (:displacement res) 6) 2)] ; node 6 = (L,L,L)
+    (is (pos? delta))
+    (is (pos? top-node-z))))
+
+(deftest tet4-cube-stiffer-displaces-less-test
+  ;; Doubling E should reduce displacement (linear-elastic).
+  (let [mk (fn [E] {:name "t" :tissue-type :bone
+                    :model {:type :linear-elastic :youngs-modulus E :poissons-ratio 0.3}})
+        d1 (:max-displacement (fem/solve-tet4-cube (mk 1.0e10) 0.01 10.0))
+        d2 (:max-displacement (fem/solve-tet4-cube (mk 2.0e10) 0.01 10.0))]
+    (is (< d2 d1))))

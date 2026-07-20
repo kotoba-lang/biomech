@@ -20,7 +20,7 @@ is split out as a `.clj` exactly like kotoba-lang/fea's `material-loader`).
 |---|---|
 | Role | capability |
 | Phase | 1 + 2 — tissue domain + closed-form sim + 3 solver backends |
-| Tests | 25 tests, 60 assertions across 6 namespaces, all green |
+| Tests | 33 tests, 91 assertions across 7 namespaces, all green |
 | Lint | 0 errors / 0 warnings (`clojure -M:lint --fail-level error`) |
 | Backends | fea (beam2 FEM) · kami-vehicle (mass-spring primitives) · kami-engine-cfd (LBM CFD) |
 
@@ -54,8 +54,10 @@ extreme-fibre distance) for rectangular and solid circular sections.
 
 ### Lumped muscle model — `kotoba.biomech.muscle`
 
-1-D mass-spring-damper with an active contractile element (Hill-type reduced
-to linear), semi-implicit Euler integrator with sub-stepping.
+1-D mass-spring-damper with an active contractile element, parabolic Hill
+force-length scaling, and a velocity relationship covering both concentric
+force loss and capped eccentric force enhancement. Semi-implicit Euler
+integration uses sub-stepping.
 
 ## Phase 2 — solver backends via `:local/root`
 

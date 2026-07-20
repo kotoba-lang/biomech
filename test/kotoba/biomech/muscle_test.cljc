@@ -60,9 +60,25 @@
     (is (zero? (muscle/force-length-factor (* 0.5 opt) opt)))))     ; lower edge
 
 (deftest force-velocity-factor-test
-  ;; Hill force-velocity (concentric): 1 at isometric, falls to 0 at v_max.
+  ;; Hill force-velocity: concentric force falls toward zero; eccentric force
+  ;; rises above isometric force and is capped at the configured maximum.
   (let [vmax 1.0]
     (is (rel= (muscle/force-velocity-factor 0.0 vmax) 1.0))      ; isometric
     (is (rel= (muscle/force-velocity-factor -0.5 vmax) 0.5))     ; half max shortening
     (is (zero? (muscle/force-velocity-factor -1.0 vmax)))        ; at v_max -> 0
-    (is (rel= (muscle/force-velocity-factor 0.5 vmax) 1.0))))    ; eccentric capped
+    (is (rel= (muscle/force-velocity-factor 0.5 vmax) 1.25))     ; eccentric boost
+    (is (rel= (muscle/force-velocity-factor 2.0 vmax) 1.5))      ; default cap
+    (is (rel= (muscle/force-velocity-factor 0.5 vmax 1.8) 1.4))))
+
+(deftest eccentric-force-exceeds-isometric-test
+  (let [p (muscle/make-params)
+        length (:optimal-length p)
+        isometric (muscle/acceleration (muscle/make-state length 0.0) p 1.0)
+        lengthening (muscle/acceleration (muscle/make-state length 0.5) p 1.0)]
+    ;; Remove the damping contribution before comparing contractile force.
+    (is (< (+ (* (:mass p) lengthening) (* (:damping p) 0.5))
+           (* (:mass p) isometric)))))
+
+(deftest force-velocity-requires-positive-vmax-test
+  (is (thrown? #?(:clj clojure.lang.ExceptionInfo :cljs js/Error)
+               (muscle/force-velocity-factor -0.1 0.0))))

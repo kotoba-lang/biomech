@@ -12,10 +12,12 @@
     純 Clojure, zero-dep, standalone で動く。
 
   Phase 2 (follow-up commits; :local/root で既存 solver を消費):
-    - kotoba-lang/fea             — 骨の FEM (linear-static tet/hex)
+    - kotoba-lang/fea             — 骨の FEM (linear-static beam2/tet4)
     - kotoba-lang/kami-vehicle    — soft-body XPBD (筋肉・皮膚の大規模変形)
     - kotoba-lang/kami-engine-cfd — 血流・気流 (Lattice-Boltzmann CFD)
-    - kotoba-lang/kami-engine     — 熱・水分 (DEC voxel PDE)
+
+  Phase 3 (backend blocker):
+    - kotoba-lang/kami-engine     — 熱・水分 (DEC voxel PDE; 未実装)
 
   3D rendering は kotoba-lang/kami-engine stack を使う (repo-wide 3D mandate).
   本 repo は biomech の *domain + simulation* を所有し、rendering は持たない。

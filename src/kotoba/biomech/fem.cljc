@@ -2,16 +2,15 @@
   "Bone FEM via kotoba-lang/fea (Phase 2 backend).
 
   Bridges biomech tissue material properties into fea's linear-static
-  beam2 solver. Scope matches fea Phase-1 exactly:
-  - fea assembles :beam2 (1-D bar) elements only (hex8/tet4 raise
-    :unsupported-element), so this namespace models slender bone as an
-    axial bar.
+  beam2 and tet4 solvers:
+  - :beam2 models slender bone as a unit-area axial bar.
+  - :tet4 models 3-D linear-elastic deformation, including bending/shear;
+    this namespace currently provides a reference cube mesh.
   - fea's beam2 uses a unit cross-section (A = 1 m²) and axial loading
     only (not transverse bending). Stresses therefore come back as
     Pa = N/m² (since A = 1), and the analytic reference is delta = F·L/E,
     sigma = F/A = F.
-  - For 3-D bone FEM (arbitrary geometry, bending), wait for fea's
-    element-assembly expansion; this namespace will grow then."
+  Arbitrary anatomical mesh ingestion and hex8 elements remain future work."
   (:require [kotoba.fea.mesh :as fea-mesh]
             [kotoba.fea.solver :as fea-solver]
             [kotoba.fea.boundary :as fea-boundary]

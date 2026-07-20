@@ -82,3 +82,33 @@
 (deftest force-velocity-requires-positive-vmax-test
   (is (thrown? #?(:clj clojure.lang.ExceptionInfo :cljs js/Error)
                (muscle/force-velocity-factor -0.1 0.0))))
+
+(deftest activation-dynamics-test
+  (let [p (muscle/make-params)
+        rising (muscle/activation-step 0.0 1.0 p 0.015)
+        falling (muscle/activation-step 1.0 0.0 p 0.015)]
+    (is (< 0.0 rising 1.0))
+    (is (< 0.0 falling 1.0))
+    ;; Deactivation has the longer time constant and therefore changes less.
+    (is (> falling (- 1.0 rising)))
+    (is (= 1.0 (muscle/activation-step 1.0 2.0 p 1.0)))
+    (is (= 0.0 (muscle/activation-step 0.0 -1.0 p 1.0)))))
+
+(deftest tendon-is-tension-only-test
+  (let [p (muscle/make-params)
+        st (muscle/make-state (:rest-length p))
+        slack-total (+ (:rest-length p) (:tendon-slack-length p))]
+    (is (zero? (muscle/tendon-force st p slack-total)))
+    (is (zero? (muscle/tendon-force st p (- slack-total 0.01))))
+    (is (rel= (muscle/tendon-force st p (+ slack-total 0.01))
+              (* 0.01 (:tendon-stiffness p))))))
+
+(deftest muscle-tendon-excitation-test
+  (let [p (muscle/make-params)
+        st (muscle/make-state (:rest-length p))
+        mtu-length (+ (:rest-length p) (:tendon-slack-length p))
+        out (muscle/simulate-muscle-tendon st p 1.0 mtu-length 1.0e-3 50)
+        final (peek out)]
+    (is (< 0.0 (:activation final) 1.0))
+    (is (< (:length final) (:rest-length p)))
+    (is (pos? (muscle/tendon-force final p mtu-length)))))

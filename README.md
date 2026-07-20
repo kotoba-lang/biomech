@@ -20,7 +20,7 @@ is split out as a `.clj` exactly like kotoba-lang/fea's `material-loader`).
 |---|---|
 | Role | capability |
 | Phase | 1 + 2 — tissue domain + closed-form sim + 3 solver backends |
-| Tests | 25 tests, 60 assertions across 6 namespaces, all green |
+| Tests | 36 tests, 102 assertions across 7 namespaces, all green |
 | Lint | 0 errors / 0 warnings (`clojure -M:lint --fail-level error`) |
 | Backends | fea (beam2 FEM) · kami-vehicle (mass-spring primitives) · kami-engine-cfd (LBM CFD) |
 
@@ -54,8 +54,12 @@ extreme-fibre distance) for rectangular and solid circular sections.
 
 ### Lumped muscle model — `kotoba.biomech.muscle`
 
-1-D mass-spring-damper with an active contractile element (Hill-type reduced
-to linear), semi-implicit Euler integrator with sub-stepping.
+1-D mass-spring-damper with an active contractile element, parabolic Hill
+force-length scaling, and a velocity relationship covering both concentric
+force loss and capped eccentric force enhancement. A first-order neural
+excitation-to-activation response drives a tension-only series-elastic tendon,
+forming a fixed-length muscle-tendon unit. Semi-implicit Euler integration
+uses sub-stepping.
 
 ## Phase 2 — solver backends via `:local/root`
 
@@ -65,8 +69,9 @@ backends. Each `:local/root` dependency is cloned as a sibling by CI
 
 ### Bone FEM — `kotoba.biomech.fem` → kotoba-lang/fea
 
-Bridges tissue material properties into fea's linear-static **beam2** solver
-(scalar axial bar; A = 1 m²; fea Phase-1 assembles `:beam2` only).
+Bridges tissue material properties into fea's linear-static **beam2** axial
+bar and **tet4** 3-D elasticity solvers. The included tet4 path is a reference
+cube mesh; anatomical mesh ingestion and hex8 remain future work.
 
 ```clojure
 (require '[kotoba.biomech.fem :as fem])
@@ -79,11 +84,9 @@ Bridges tissue material properties into fea's linear-static **beam2** solver
 
 ### Soft tissue — `kotoba.biomech.softbody` → kotoba-lang/kami-vehicle
 
-A 3-D mass-spring-damper grid for muscle / skin / organ walls. Consumes
-kami-vehicle's `vec3` / `node` / `beam` data primitives; runs its own
-beam-only semi-implicit Euler integrator (kami-vehicle's `vehicle.vehicle/step`
-is vehicle-specific — tire/powertrain/Pacejka — so the generic soft-body
-core is lifted here).
+A 3-D mass-spring-damper grid for muscle / skin / organ walls. This namespace
+is a thin biomech wrapper over kami-vehicle's vehicle-agnostic
+`vehicle.softbody` integrator and adds tissue-to-spring parameter mapping.
 
 ```clojure
 (require '[kotoba.biomech.softbody :as softbody])
@@ -110,9 +113,10 @@ section / plaque / airway constriction); reads back the drag the flow exerts.
 | phase | concern | backend | status |
 |---|---|---|---|
 | 2 | bone FEM (axial bar) | kotoba-lang/fea | **landed** |
+| 2.1 | bone FEM (3-D tet4 reference mesh) | kotoba-lang/fea | **landed** |
 | 2 | soft tissue mass-spring | kotoba-lang/kami-vehicle | **landed** |
 | 2 | blood / air flow (LBM) | kotoba-lang/kami-engine-cfd | **landed** |
-| 2→3 | bone FEM (3-D tet/hex, bending) | kotoba-lang/fea | blocked on fea element-assembly expansion |
+| 2→3 | anatomical mesh ingestion / hex8 | kotoba-lang/fea | not implemented |
 | 3 | thermoregulation / moisture (DEC voxel PDE) | kotoba-lang/kami-engine | blocked — DEC solver not yet implemented in pure-Clojure kami-engine (former Rust workspace removed) |
 
 3-D rendering of any sim output uses the kotoba-lang/kami-engine stack

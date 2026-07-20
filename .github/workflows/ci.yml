@@ -4,8 +4,31 @@ jobs:
   test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout biomech
+        uses: actions/checkout@v4
+        with:
+          path: biomech
+      - name: Checkout fea backend
+        uses: actions/checkout@v4
+        with:
+          repository: kotoba-lang/fea
+          path: fea
+      - name: Checkout soft-body backend
+        uses: actions/checkout@v4
+        with:
+          repository: kotoba-lang/kami-vehicle
+          path: kami-vehicle
+      - name: Checkout CFD backend
+        uses: actions/checkout@v4
+        with:
+          repository: kotoba-lang/kami-engine-cfd
+          path: kami-engine-cfd
       - uses: DeLaGuardo/setup-clojure@13.4
         with:
           cli: latest
-      - run: clojure -X:test
+      - name: Test
+        working-directory: biomech
+        run: clojure -X:test
+      - name: Lint
+        working-directory: biomech
+        run: clojure -M:lint

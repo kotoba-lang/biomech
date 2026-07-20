@@ -60,9 +60,55 @@
     (is (zero? (muscle/force-length-factor (* 0.5 opt) opt)))))     ; lower edge
 
 (deftest force-velocity-factor-test
-  ;; Hill force-velocity (concentric): 1 at isometric, falls to 0 at v_max.
+  ;; Hill force-velocity: concentric force falls toward zero; eccentric force
+  ;; rises above isometric force and is capped at the configured maximum.
   (let [vmax 1.0]
     (is (rel= (muscle/force-velocity-factor 0.0 vmax) 1.0))      ; isometric
     (is (rel= (muscle/force-velocity-factor -0.5 vmax) 0.5))     ; half max shortening
     (is (zero? (muscle/force-velocity-factor -1.0 vmax)))        ; at v_max -> 0
-    (is (rel= (muscle/force-velocity-factor 0.5 vmax) 1.0))))    ; eccentric capped
+    (is (rel= (muscle/force-velocity-factor 0.5 vmax) 1.25))     ; eccentric boost
+    (is (rel= (muscle/force-velocity-factor 2.0 vmax) 1.5))      ; default cap
+    (is (rel= (muscle/force-velocity-factor 0.5 vmax 1.8) 1.4))))
+
+(deftest eccentric-force-exceeds-isometric-test
+  (let [p (muscle/make-params)
+        length (:optimal-length p)
+        isometric (muscle/acceleration (muscle/make-state length 0.0) p 1.0)
+        lengthening (muscle/acceleration (muscle/make-state length 0.5) p 1.0)]
+    ;; Remove the damping contribution before comparing contractile force.
+    (is (< (+ (* (:mass p) lengthening) (* (:damping p) 0.5))
+           (* (:mass p) isometric)))))
+
+(deftest force-velocity-requires-positive-vmax-test
+  (is (thrown? #?(:clj clojure.lang.ExceptionInfo :cljs js/Error)
+               (muscle/force-velocity-factor -0.1 0.0))))
+
+(deftest activation-dynamics-test
+  (let [p (muscle/make-params)
+        rising (muscle/activation-step 0.0 1.0 p 0.015)
+        falling (muscle/activation-step 1.0 0.0 p 0.015)]
+    (is (< 0.0 rising 1.0))
+    (is (< 0.0 falling 1.0))
+    ;; Deactivation has the longer time constant and therefore changes less.
+    (is (> falling (- 1.0 rising)))
+    (is (= 1.0 (muscle/activation-step 1.0 2.0 p 1.0)))
+    (is (= 0.0 (muscle/activation-step 0.0 -1.0 p 1.0)))))
+
+(deftest tendon-is-tension-only-test
+  (let [p (muscle/make-params)
+        st (muscle/make-state (:rest-length p))
+        slack-total (+ (:rest-length p) (:tendon-slack-length p))]
+    (is (zero? (muscle/tendon-force st p slack-total)))
+    (is (zero? (muscle/tendon-force st p (- slack-total 0.01))))
+    (is (rel= (muscle/tendon-force st p (+ slack-total 0.01))
+              (* 0.01 (:tendon-stiffness p))))))
+
+(deftest muscle-tendon-excitation-test
+  (let [p (muscle/make-params)
+        st (muscle/make-state (:rest-length p))
+        mtu-length (+ (:rest-length p) (:tendon-slack-length p))
+        out (muscle/simulate-muscle-tendon st p 1.0 mtu-length 1.0e-3 50)
+        final (peek out)]
+    (is (< 0.0 (:activation final) 1.0))
+    (is (< (:length final) (:rest-length p)))
+    (is (pos? (muscle/tendon-force final p mtu-length)))))

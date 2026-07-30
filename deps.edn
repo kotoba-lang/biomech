@@ -19,9 +19,12 @@
 {:paths ["src" "resources"]
  :deps {org.clojure/clojure {:mvn/version "1.11.1"}
         org.clojure/clojurescript {:mvn/version "1.11.132"}
-        io.github.kotoba-lang/fea {:local/root "../fea"}
-        io.github.kotoba-lang/kami-vehicle {:local/root "../kami-vehicle"}
-        io.github.kotoba-lang/kami-engine-cfd {:local/root "../kami-engine-cfd"}}
+        io.github.kotoba-lang/fea {:git/url "https://github.com/kotoba-lang/fea.git"
+                                     :git/sha "1cfc7a96dc9c5b197d25478c094fc12ca527476f"}
+        io.github.kotoba-lang/kami-vehicle {:git/url "https://github.com/kotoba-lang/kami-vehicle.git"
+                                     :git/sha "e0eb1869984cd30415c704f03ef46fbbb0289da1"}
+        io.github.kotoba-lang/kami-engine-cfd {:git/url "https://github.com/kotoba-lang/kami-engine-cfd.git"
+                                     :git/sha "a91b2270a199038e691ad80f7451d1ba468cb4cc"}}
  :aliases
  {:test {:extra-paths ["test"]
          :extra-deps {io.github.cognitect-labs/test-runner

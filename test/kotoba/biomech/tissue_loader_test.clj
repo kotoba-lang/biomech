@@ -32,7 +32,10 @@
     (is (= 5.0e8  (E "Cancellous-Bone"))) (is (= 0.30 (nu "Cancellous-Bone"))) (is (= 800  (d "Cancellous-Bone")))
     (is (= 3.0e4  (E "Skeletal-Muscle"))) (is (= 0.45 (nu "Skeletal-Muscle"))) (is (= 1060 (d "Skeletal-Muscle")))
     (is (= 1.0e4  (tissue/shear-modulus (tissue/find-tissue ps "Skeletal-Muscle"))))
-    (is (= 1.0e5  (E "Skin")))            (is (= 0.45 (nu "Skin")))            (is (= 1100 (d "Skin")))
+    ;; SKIN'S MODULUS IS NO LONGER LEGACY. 1.0e5 cited nobody and sits below
+    ;; every quantity read for human skin; 1.18e6 is Ni Annaidh's measured
+    ;; initial slope. nu and density are still the legacy values.
+    (is (= 1.18e6 (E "Skin")))            (is (= 0.45 (nu "Skin")))            (is (= 1100 (d "Skin")))
     (is (= 3.0e3  (E "Liver")))           (is (= 0.45 (nu "Liver")))           (is (= 1060 (d "Liver")))
     (is (= 1.2e9  (E "Tendon")))          (is (= 0.40 (nu "Tendon")))          (is (= 1100 (d "Tendon")))
     ;; CARTILAGE'S POISSON'S RATIO IS NO LONGER LEGACY. 0.40 cited nobody;
@@ -279,3 +282,39 @@
     (is (= [1.7e-15 5.4e-15] (get-in t [:model :permeability-range])))
     (is (= (tissue/permeability t) (first (get-in t [:model :permeability-range])))
         "the scalar must BE an endpoint of the range, not merely inside it")))
+
+(deftest skin-scalar-is-the-initial-slope-and-the-other-regime-is-carried-test
+  ;; ONE SPECIMEN SET, TWO MODULI, 70x APART. Ni Annaidh's abstract names both,
+  ;; so choosing one and hiding the other would be choosing on the reader's
+  ;; behalf without telling them. The scalar is the initial slope; the
+  ;; linear-region value is beside it with its own SD.
+  (let [t (tissue-named "Skin")
+        rg #(get-in t [:model :strain-regimes % :youngs-modulus])]
+    (is (= 1.18e6 (tissue/youngs-modulus t)))
+    (is (= (rg :initial) (tissue/youngs-modulus t))
+        "the scalar must BE the initial-slope entry, not merely near it")
+    (is (= 8.33e7 (rg :linear-region)))
+    (is (double? (rg :linear-region)))
+    (is (= 8.8e5  (get-in t [:model :strain-regimes :initial :sd])))
+    (is (= 3.49e7 (get-in t [:model :strain-regimes :linear-region :sd])))
+    (testing "the two regimes really are ~70x apart, which is why both are here"
+      (is (< 69.0 (/ (rg :linear-region) (rg :initial)) 71.0)))
+    (testing "and the old 1.0e5 is below even the initial slope minus one SD"
+      (is (< 1.0e5 (- (rg :initial) (get-in t [:model :strain-regimes :initial :sd])))))
+    (is (= :sourced (tissue/scalar-provenance t)))))
+
+(deftest skin-anisotropy-is-established-but-its-values-were-not-obtained-test
+  ;; THE HONEST SHAPE OF A MEASURED-BUT-UNPUBLISHED ANISOTROPY. The MANOVA
+  ;; proves orientation matters; the abstract prints no per-orientation modulus.
+  ;; :directional therefore carries the basis and an explicit marker, and
+  ;; directional-modulus answers nil for every direction rather than handing
+  ;; back the orientation-averaged scalar dressed as a direction.
+  (let [t (tissue-named "Skin")]
+    (is (some? (tissue/directional t)))
+    (is (= :not-in-abstract (get-in t [:model :directional :per-orientation-values])))
+    (doseq [dir [:along-langer-lines :across-langer-lines :axial :circumferential-outer]]
+      (is (nil? (tissue/directional-modulus t dir))
+          (str "skin must not answer a modulus for direction " dir)))
+    (testing "and the quotation carries the significance levels, not a value"
+      (is (re-find #"dependent upon the orientation of the Langer lines \(P<0\.0001-P=0\.046\)"
+                   (read-matching "Skin" #"Langer"))))))

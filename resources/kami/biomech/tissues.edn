@@ -29,10 +29,61 @@
   {:name "Skin"
    :tissue-type :skin
    :model {:type :hyperelastic
-           :youngs-modulus 1.0e5
+           ;; 1.0e5 -> 1.18e6. THE OLD VALUE IS BELOW EVERYTHING READ.
+           ;; The entry claimed a "low-strain effective E in [50,150] kPa" and
+           ;; cited nobody. Three quantities were read for human skin and all
+           ;; three are ABOVE 0.1 MPa:
+           ;;   0.60 MPa   3 * the GOH ground-substance shear modulus
+           ;;              mu = 0.2014 MPa (Ni Annaidh 2012b)          ->  6x
+           ;;   1.18 MPa   the measured INITIAL SLOPE  (Ni Annaidh 2012a) -> 12x
+           ;;   83.3 MPa   the measured LINEAR-REGION modulus (2012a)  -> 833x
+           ;; The scalar takes the initial slope, because that is the same
+           ;; quantity the old note claimed to hold -- the low-strain stiffness
+           ;; -- and because it is a directly measured number rather than a
+           ;; constitutive-fit parameter. Even its -1 SD bound, 0.30 MPa, is
+           ;; three times the value that was here.
+           :youngs-modulus 1.18e6
+           ;; NOT SOURCED. No source read here measured a Poisson's ratio or a
+           ;; density for skin.
            :poissons-ratio 0.45
-           :density 1100}
-   :source "representative; skin low-strain effective E in [50,150] kPa, stiffens strongly with strain (hyperelastic)"}
+           :density 1100
+           :ultimate-tensile-strength 2.16e7
+           :failure-strain 0.54
+           :strain-regimes
+           {:basis "Ni Annaidh 2012a, 56 excised human back-skin samples in uniaxial tension at 0.012 per second. ONE SPECIMEN SET, TWO MODULI, 70x APART: skin's stress-strain curve is a toe followed by a stiff collagen-dominated region, and the specimens did not fail until 54% strain. Which of these two numbers is right depends entirely on how far the caller is stretching the tissue."
+            :initial {:youngs-modulus 1.18e6 :sd 8.8e5
+                      :note "The initial slope. SD is 75% of the mean."}
+            :linear-region {:youngs-modulus 8.33e7 :sd 3.49e7
+                            :note "The paper's \"mean elastic modulus\". Reached only at large strain, well past anything a soft-body contact model runs at."}}
+           :goh-model
+           {:basis "Ni Annaidh 2012b, Gasser-Ogden-Holzapfel fit to human dermis, parameters by least-squares curve fitting of experimental test data. Carried for reference; the scalar above does NOT come from this fit."
+            :ground-substance-shear-modulus 2.014e5
+            :k1 243.6
+            :k2 0.1327
+            :fibre-dispersion 0.1404
+            :fibre-dispersion-sd 0.0028}
+           :directional
+           {:basis "Langer lines. Ni Annaidh 2012a ESTABLISHES the anisotropy statistically and does not publish it as numbers: a MANOVA found the mechanical properties depend on Langer-line orientation at P<0.0001 to P=0.046, and 2012b found the Langer-line direction correlates with the preferred collagen fibre orientation in the dermis at p<0.001, R^2 = 0.95."
+            :per-orientation-values :not-in-abstract
+            :site-dependence "Location on the back also matters, and is likewise given as significance and not as values: UTS P=0.0002, elastic modulus P=0.001, strain energy P=0.0052."}}
+   :source "Ni Annaidh A et al. 2012 J Mech Behav Biomed Mater 5(1):139-148 (PMID 22100088): initial slope 1.18 +/- 0.88 MPa, elastic modulus 83.3 +/- 34.9 MPa, UTS 21.6 +/- 8.4 MPa, failure strain 54% +/- 17%, n = 56. + Ni Annaidh A et al. 2012 Ann Biomed Eng 40(8):1666-1678 (PMID 22427196): GOH fit to human dermis, mu = 0.2014 MPa, k1 = 243.6, k2 = 0.1327, dispersion kappa = 0.1404 +/- 0.0028. SPECIMEN: excised human skin from the BACK, full thickness, cadaveric (MeSH: Humans, Skin, Dermis, Aged 80 and over). DIRECTION: uniaxial in-plane tension; the tissue is anisotropic about the Langer lines and the per-orientation moduli are NOT in either abstract, so this entry carries a direction-averaged number and says so. RATE: 0.012 per second -- slow, not impact. REGIME: the scalar is the INITIAL SLOPE. The same specimens give 83.3 MPa in the linear region, 70x stiffer; see :strain-regimes. CHANGED HERE: :youngs-modulus 1.0e5 -> 1.18e6, because 1.0e5 cited nobody and lies below every quantity read."
+   :provenance
+   {:scalar :sourced
+    :sources
+    [{:citation "Ni Annaidh A, Bruyere K, Destrade M, Gilchrist MD, Ottenio M. Characterization of the anisotropic mechanical properties of excised human skin. J Mech Behav Biomed Mater. 2012;5(1):139-148."
+      :doi "10.1016/j.jmbbm.2011.08.016"
+      :pmid "22100088"
+      :obtained :abstract
+      :retrieved-via :europe-pmc-rest
+      :read "Verbatim: \"we have investigated the influence of location and orientation on the deformation characteristics of 56 samples of excised human skin. Uniaxial tensile tests were carried out at a strain rate of 0.012 s(-1) on skin from the back.\" And the numbers, verbatim: \"The mean ultimate tensile strength (UTS) was 21.6+/-8.4 MPa, the mean failure strain 54%+/-17%, the mean initial slope 1.18+/-0.88 MPa, the mean elastic modulus 83.3+/-34.9 MPa and the mean strain energy was 3.6+/-1.6 MJ/m(3).\" And the anisotropy, verbatim: \"A multivariate analysis of variance has shown that these mechanical properties of skin are dependent upon the orientation of the Langer lines (P<0.0001-P=0.046). The location of specimens on the back was also found to have a significant effect on the UTS (P=0.0002), the elastic modulus (P=0.001) and the strain energy (P=0.0052).\""
+      :caveat "TWO MODULI FROM ONE SPECIMEN SET, 70x APART, AND THE ABSTRACT NAMES BOTH. Taking either one as \"the\" modulus of skin is a choice about strain, not about skin. The anisotropy is measured and REPORTED ONLY AS SIGNIFICANCE -- there is no per-Langer-line modulus in the abstract, so the scalar carried here is averaged over orientation and this entry cannot answer \"how stiff is skin along the Langer lines\". Excised cadaveric back skin under in-plane tension is also not the same loading as in-vivo indentation, which is where the tens-of-kPa figures in the older literature come from; the two are not in contradiction, they are different experiments, and this entry now says which one it holds."}
+     {:citation "Ni Annaidh A, Bruyere K, Destrade M, Gilchrist MD, Maurini C, Ottenio M, Saccomandi G. Automated estimation of collagen fibre dispersion in the dermis and its contribution to the anisotropic behaviour of skin. Ann Biomed Eng. 2012;40(8):1666-1678."
+      :doi "10.1007/s10439-012-0542-3"
+      :pmid "22427196"
+      :obtained :abstract
+      :retrieved-via :europe-pmc-rest
+      :read "Verbatim: \"The mean dispersion factor for the dermis was kappa = 0.1404+/-0.0028. The constitutive parameters mu, k(1) and k(2) were evaluated through physically-based, least squares curve-fitting of experimental test data. The values found for mu, k(1) and k(2) were 0.2014 MPa, 243.6 and 0.1327, respectively.\" And, verbatim: \"a definite correlation between the orientation of Langer lines and the preferred orientation of collagen fibres in the dermis (p < 0.001, R(2) = 0.95) was observed.\""
+      :caveat "mu = 0.2014 MPa is the GOH ground-substance shear modulus, NOT a Young's modulus and NOT the initial slope. For an incompressible isotropic ground substance it corresponds to E = 3mu = 0.60 MPa, which is half the measured initial slope from the same group -- the difference is the collagen term k1/k2, which carries the rest. It is recorded here as a third independent number above 0.1 MPa, and the scalar does not come from it."}]}}
 
   {:name "Liver"
    :tissue-type :organ

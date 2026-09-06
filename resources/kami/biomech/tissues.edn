@@ -139,6 +139,25 @@
            ;; than being written into :youngs-modulus, which would be a category
            ;; error no reader could see.
            :aggregate-modulus 5.6e5
+           ;; THE OTHER FOUR NUMBERS FROM THE SAME SENTENCE OF THE SAME PAPER.
+           ;; The entry used to carry H_A0 alone, which is the half of Iatridis
+           ;; 1998 that says where the tissue ENDS UP and none of the half that
+           ;; says how long it takes or how the law bends on the way. Reading
+           ;; H_A0 without them is what produced 82% strain from sitting still.
+           ;; sigma(offset), 0.13 +/- 0.06 MPa normal: the stress the tissue
+           ;; already carries at zero strain. Subtracting it is not a fudge, it
+           ;; is the constitutive law: sigma = sigma_offset + H_A0 * eps.
+           :swelling-stress 1.3e5
+           ;; k0, 0.20 +/- 0.10 x 10^-15 m^4/N-s. With H_A0 this fixes the
+           ;; poroelastic diffusivity H_A0 * k0 and hence the time constant.
+           :permeability 2.0e-16
+           ;; beta, 2.13 +/- 1.48 normal. CARRIED BUT NOT USED by
+           ;; kotoba.biomech.disc, which is linear; the disc namespace names it
+           ;; in its :missing vector rather than pretending it does not exist.
+           :nonlinear-stiffening-coefficient 2.13
+           ;; M, 1.18 +/- 1.30, all specimens. Same status: measured, unused,
+           ;; named. Its SD is larger than its mean.
+           :permeability-strain-coefficient 1.18
            :directional
            {:basis "Elliott & Setton 2001, human AF, tension, linear region. 1 = circumferential, 2 = axial, 3 = radial."
             :circumferential-outer {:youngs-modulus 1.74e7 :sd 1.43e7}
@@ -164,7 +183,7 @@
       :doi "10.1016/s0021-9290(98)00046-3"
       :pmid "9755038"
       :obtained :abstract
-      :read "Confined compression of axial and radial specimens from the anterior outer region of L2-3. Verbatim: \"Significant effects of degeneration but not orientation were detected for the reference stress offset, sigma(offset), and parameters describing the compressive stiffness (i.e. reference aggregate modulus, H(A0), and nonlinear stiffening coefficient, beta). Average values were 0.13+/-0.06 and 0.05+/-0.05 MPa for sigma(offset), 0.56+/-0.21 and 1.10+/-0.53 MPa for H(A0) and 2.13+/-1.48 and 0.44+/-0.61 for beta for all normal and degenerate specimens, respectively.\" The 0.56 MPa taken here is the NORMAL value."
+      :read "Confined compression of axial and radial specimens from the anterior outer region of L2-3. Verbatim: \"Significant effects of degeneration but not orientation were detected for the reference stress offset, sigma(offset), and parameters describing the compressive stiffness (i.e. reference aggregate modulus, H(A0), and nonlinear stiffening coefficient, beta). Average values were 0.13+/-0.06 and 0.05+/-0.05 MPa for sigma(offset), 0.56+/-0.21 and 1.10+/-0.53 MPa for H(A0) and 2.13+/-1.48 and 0.44+/-0.61 for beta for all normal and degenerate specimens, respectively.\" The 0.56 MPa taken here is the NORMAL value.\" And the permeability sentence, verbatim: \"No significant effect of degeneration or orientation were detected for either of the parameters describing the strain-dependent permeability (i.e. reference permeability, k0 and strain-dependent permeability coefficient, M) with average values for all specimens of 0.20+/-0.10 x 10(-15) m4/N-s and 1.18+/-1.30 for k0 and M, respectively.\" And the conclusion this entry rests on, verbatim: \"The significant effects of degeneration reported in this study suggested a shift in load carriage from fluid pressurization and swelling pressure to deformation of the solid matrix of the AF.\""
       :caveat "H_A0 is a REFERENCE modulus at the zero-strain state of a NONLINEAR model: the same sentence reports a stiffening coefficient beta = 2.13 +/- 1.48 for normal tissue. Treating the tissue as linear therefore OVERSTATES deformation at finite strain. kotoba.biomech.disc says so and refuses rather than returning the overstated number."}]
     :unobtained
     [{:citation "Ebara S, Iatridis JC, Setton LA, Foster RJ, Mow VC, Weidenbaum M. Tensile properties of nondegenerate human lumbar anulus fibrosus. Spine. 1996;21(4):452-461."
@@ -197,7 +216,21 @@
            :angular-frequency-range-rad-s [1.0 100.0]
            ;; Confined compression, nondegenerate.
            :aggregate-modulus 1.01e6
-           :swelling-stress 1.38e5}
+           :swelling-stress 1.38e5
+           ;; ka, 0.9 +/- 0.43 x 10^-15 m^4/N-s nondegenerate. FOUR AND A HALF
+           ;; TIMES the anulus k0, which is why the two tissues have time
+           ;; constants an order of magnitude apart for the same disc height.
+           :permeability 9.0e-16
+           ;; NO :nonlinear-stiffening-coefficient AND NO
+           ;; :permeability-strain-coefficient, DELIBERATELY. Johannessen &
+           ;; Elliott state their method verbatim: \"Linear biphasic theory was
+           ;; used to determine the permeability of the tissue.\" Nobody in the
+           ;; sources read here fitted a nonlinear law to human nucleus, so
+           ;; there is no beta to carry. That absence is a different fact from
+           ;; the anulus's beta = 2.13 sitting unused, and the accessors return
+           ;; nil for both only because nil is the honest answer to \"what did
+           ;; the literature measure\", not because the two cases are alike.
+           }
    :source "Iatridis 1997 J Biomech 30(10):1005-1013 (PMID 9391867): |G*| 7-20 kPa, loss angle 23-30 deg, over 1-100 rad/s. RATE IS THE WHOLE POINT: this tissue is fluid-like in relaxation and solid-like only dynamically, so a shear modulus without a frequency is meaningless. + Johannessen & Elliott 2005 Spine 30(24):E724-E729 (PMID 16371889): effective aggregate modulus 1.01 +/- 0.43 MPa nondegenerate, swelling stress 0.138 +/- 0.029 MPa. NO Young's modulus and NO Poisson's ratio are carried, deliberately: see the :model comments."
    :provenance
    {:sources
@@ -211,6 +244,6 @@
       :doi "10.1097/01.brs.0000192236.92867.15"
       :pmid "16371889"
       :obtained :abstract
-      :read "Verbatim: \"Degeneration produced significant decreases in swelling stress (Psw = 0.138 +/- 0.029 MPa nondegenerate, Psw = 0.037 +/- 0.038 MPa degenerate) and effective aggregate modulus (H(A)(eff) = 1.01 +/- 0.43 MPa nondegenerate, H(A)(eff) = 0.44 +/- 0.19 MPa degenerate).\" And the conclusion, verbatim: \"Swelling is the primary load-bearing mechanism in both nondegenerate and degenerate nucleus pulposus.\""
+      :read "Verbatim: \"Degeneration produced significant decreases in swelling stress (Psw = 0.138 +/- 0.029 MPa nondegenerate, Psw = 0.037 +/- 0.038 MPa degenerate) and effective aggregate modulus (H(A)(eff) = 1.01 +/- 0.43 MPa nondegenerate, H(A)(eff) = 0.44 +/- 0.19 MPa degenerate).\" And the permeability sentence, verbatim: \"Permeability increased with degeneration (ka = 0.9 +/- 0.43 x 10(-15) m4/N-s nondegenerate, ka = 1.4 +/- 0.58 x 10(-15) m4/N-s degenerate).\" And the method, verbatim: \"Linear biphasic theory was used to determine the permeability of the tissue.\" And the conclusion, verbatim: \"Swelling is the primary load-bearing mechanism in both nondegenerate and degenerate nucleus pulposus.\""
       :caveat "That conclusion is why a linear elastic reading of this tissue is wrong IN KIND and not merely in magnitude: the in-vivo load path is osmotic swelling and fluid pressurisation, not deformation of a solid matrix."}]}}
 ]}

@@ -135,3 +135,59 @@
     (is (= [] @bad)
         (str "unevaluated forms or bare symbols in tissues.edn: " (pr-str @bad)))
     (is (pos? (count ps)) "and the walk must have had something to walk")))
+
+(deftest disc-biphasic-fields-are-numbers-not-merely-present-test
+  ;; THE TYPE IS THE TEST, not the presence. `edn/read-string` will hand back a
+  ;; PersistentList for `(str "0.9" "e-15")` and it prints in a listing exactly
+  ;; like a value; `some?` would pass on it and every arithmetic use of it would
+  ;; then throw somewhere else entirely. These five fields are new and are the
+  ;; inputs to a time constant, so they are checked as doubles and pinned to the
+  ;; values their abstracts state.
+  (let [ps (loader/presets)
+        af (tissue/find-tissue ps "Annulus-Fibrosus")
+        np (tissue/find-tissue ps "Nucleus-Pulposus")]
+    (testing "anulus, Iatridis 1998: sigma(offset) 0.13 MPa, k0 0.20e-15, beta 2.13, M 1.18"
+      (is (double? (tissue/swelling-stress af)))
+      (is (= 1.3e5 (tissue/swelling-stress af)))
+      (is (double? (tissue/permeability af)))
+      (is (= 2.0e-16 (tissue/permeability af)))
+      (is (double? (tissue/nonlinear-stiffening-coefficient af)))
+      (is (= 2.13 (tissue/nonlinear-stiffening-coefficient af)))
+      (is (double? (tissue/permeability-strain-coefficient af)))
+      (is (= 1.18 (tissue/permeability-strain-coefficient af))))
+    (testing "nucleus, Johannessen & Elliott 2005: Psw 0.138 MPa, ka 0.9e-15"
+      (is (double? (tissue/swelling-stress np)))
+      (is (= 1.38e5 (tissue/swelling-stress np)))
+      (is (double? (tissue/permeability np)))
+      (is (= 9.0e-16 (tissue/permeability np))))
+    (testing "and the nucleus has NO nonlinear parameters, because none were measured"
+      ;; Johannessen & Elliott state verbatim that they used linear biphasic
+      ;; theory. nil here is a claim about the literature, not an omission, and
+      ;; kotoba.biomech.disc reports it as :nonlinear-stiffening-never-measured
+      ;; rather than as an unused coefficient.
+      (is (nil? (tissue/nonlinear-stiffening-coefficient np)))
+      (is (nil? (tissue/permeability-strain-coefficient np))))
+    (testing "the single-phase tissues have none of it, and are not given defaults"
+      (let [liver (tissue/find-tissue ps "Liver")]
+        (is (nil? (tissue/swelling-stress liver)))
+        (is (nil? (tissue/permeability liver)))))))
+
+(deftest disc-read-records-quote-the-permeability-sentences-test
+  ;; Every number added above must be traceable to a quotation in the entry, and
+  ;; the quotation must contain the number. A citation without its sentence is
+  ;; how a plausible value gets attributed to a paper that does not contain it.
+  (let [ps (loader/presets)
+        read-of (fn [nm needle]
+                  (->> (tissue/sources (tissue/find-tissue ps nm))
+                       (map :read)
+                       (filter #(re-find needle %))
+                       first))]
+    (is (re-find #"0\.20\+/-0\.10 x 10\(-15\) m4/N-s and 1\.18\+/-1\.30"
+                 (or (read-of "Annulus-Fibrosus" #"k0") "")))
+    (is (re-find #"ka = 0\.9 \+/- 0\.43 x 10\(-15\) m4/N-s nondegenerate"
+                 (or (read-of "Nucleus-Pulposus" #"ka") "")))
+    (is (re-find #"Linear biphasic theory was used"
+                 (or (read-of "Nucleus-Pulposus" #"Linear biphasic") "")))
+    (testing "and the sentence that justifies reading sigma(offset) as swelling pressure"
+      (is (re-find #"shift in load carriage from fluid pressurization and swelling pressure to deformation of the solid matrix"
+                   (or (read-of "Annulus-Fibrosus" #"shift in load carriage") ""))))))

@@ -109,13 +109,151 @@ sentence. The docstring is corrected and
 is untouched, because retuning `k` to rescue a comment would have changed every
 passive number in this repo.
 
+### Which passive model is right, and what the sources actually say
+
+Settled 2026-09-07. The measurement above left this open and said why: deciding
+it needed a third source, and neither anchor either repo already uses — Hansraj
+2014 cervical compression, Wilke 1999 intradiscal pressure — is one. Six were
+gone to. Five could be read; the sixth is recorded below as unobtainable rather
+than cited.
+
+**Every source that specifies a passive force–length curve specifies it as
+tension-only, with the onset at or near optimal fiber length. None of them lets
+the parallel element push.** The disagreement in the table above is therefore
+not two defensible models: on the tissue question biomech is the outlier.
+
+| source | what could be read | what it specifies |
+|---|---|---|
+| **Thelen 2003** — ASME *J Biomech Eng* **125**(1):70–77, DOI [10.1115/1.1531112](https://doi.org/10.1115/1.1531112) | full text | Eq. (3), verbatim: `F̄^PE = (e^(k^PE(L̄^M−1)/ε₀^M) − 1) / (e^(k^PE) − 1)`, "where F̄^PE is the normalized passive muscle force, k^PE is an exponential shape factor, and ε₀^M is the passive muscle strain due to maximum isometric force. The shape factor, k^PE, was set equal to five". Table 1 (p. 71) gives ε₀^M = **0.6** young, **0.5** old — "reduced from 0.60 for young adults to 0.50 for older adults to account for the relative increase in passive stiffness". **The printed equation is not itself tension-only**: it is negative for L̄^M < 1. |
+| **OpenSim's Thelen implementation** — `OpenSim/Actuators/Thelen2003Muscle.cpp`, opensim-core `main` | source read directly | `calcfpe` supplies the clamp the paper omits: `double fpe = 0; ... if(lceN > 1.0){ ... } return fpe;`. Defaults `constructProperty_FmaxMuscleStrain(0.6)` and `constructProperty_KshapePassive(5.0)` — the paper's two numbers. |
+| **Millard et al. 2013** — ASME *J Biomech Eng* **135**(2):**021004**, DOI [10.1115/1.4023390](https://doi.org/10.1115/1.4023390) | full text | Sec. 2, verbatim: "Force is also developed when the muscle is stretched **beyond a threshold length**, regardless of whether the muscle is activated, which is represented by the passive-force–length curve *f*^PE(*l̃*^M)". The curve is a quintic Bézier spline fit to experimental data, not an exponential. Its shipped parameters live in `FiberForceLengthCurve` (source read): `strain_at_zero_force` **0.0**, `strain_at_one_norm_force` **0.7**, `stiffness_at_low_force` 0.2, `stiffness_at_one_norm_force` 2.86, `curviness` 0.75, "fit to the experimentally measured fiber-force-length curves of Winters et al. (2010, Fig. 3a)". Zero below optimal is structural, not a clamp: the spline is built with a low-end extrapolation slope of `0.0` from `xZero = 1 + eZero`. |
+| **Winters et al. 2011** — *J Biomech* **44**(1):109–115, DOI [10.1016/j.jbiomech.2010.08.033](https://doi.org/10.1016/j.jbiomech.2010.08.033) | full text | The modelling assumption, verbatim: "When not activated, the muscle is assumed to develop force in the passive element for muscle lengths greater than optimal length (L₀). The passive length-tension relationship is generated using the generic non-dimensional model popularized by Zajac (1989)". And the check on it: rabbit TA/EDL/EDII were measured "from −40%L_fn to 40%L_fn in increments of 5%L_fn", passive tension read as "the baseline (preactivation) force", and the model **failed** — ICC 0.70 ± 0.07, "not an accurate predictor of passive tension". The stated reason is the *onset*, not the sign: "The deviation in position results from the model's assumption that passive tension is first developed at L₀. This is not the case for all muscles." |
+| **Ward et al. 2020** — *Front Physiol* **11**:211, DOI [10.3389/fphys.2020.00211](https://doi.org/10.3389/fphys.2020.00211) | full text | The physiological claim, stated as such rather than modelled: "**Passive tension is borne by a muscle when it is lengthened beyond slack length.**" Slack length is operationally the "length at which tension was ∼2 μN"; measured slack sarcomere lengths are 2.22–2.38 μm across fibers, bundles and fascicles in three muscles (Table 1), and specimens are only ever "stretched in total to ∼100% strain". |
+| **Zajac 1989** — *Crit Rev Biomed Eng* **17**(4):359–411, PMID 2676342 | **`:could-not-obtain`** — abstract only | The abstract does not mention the passive curve. A free full text is indexed on HAL (`hal-04849267`) but the document endpoint serves a bot challenge, and getting past one is not something this workspace does. **Zajac's passive specification reaches this repo only second-hand**, through Winters 2011's description of it quoted above. It is not cited here for anything Winters does not say. |
+
+Two things fall out that neither README knew yesterday.
+
+**suji is not a third model. It is Thelen 2003 with the older-adult strain
+parameter, scaled by 0.8.** `suji.methods.muscle/passive-force-n` computes
+`0.8 · F_peak · (e^(5x) − 1)/(e^5 − 1)` with `x = (L/L₀ − 1)/0.5`. Substitute
+ε₀^M = 0.5 into Thelen's Eq. (3) and the exponent is identical; suji's shape
+factor 5.0 *is* Thelen's k^PE. So suji ≡ 0.8 × Thelen(ε₀^M = 0.5). Checked, not
+asserted: at 1.30 / 1.50 / 1.60 × optimal that identity reproduces suji's own
+published 0.1036 / 0.8000 / 2.1840 fractions of peak to every digit, and
+`suji-passive-curve-is-thelen-with-the-older-adult-strain-test` pins biomech's
+side of it.
+
+**The literature's own onset assumption is the weakest part of it.** Winters
+measured the curve OpenSim ships against real muscle and it failed. So "passive
+force is zero below optimal length" is not a measured fact; it is a modelling
+convention whose author reports it is wrong for some muscles. What *is* measured
+is the sign — Ward's slack length, and the fact that every one of these
+protocols only ever stretches. **Nothing measures a muscle belly pushing.**
+
+### What biomech does about it, and why the default did not change
+
+`kotoba.biomech.muscle` now carries both models, selected by `:passive-model`:
+
+```clojure
+(require '[kotoba.biomech.muscle :as m])
+(def p (assoc (m/make-params) :passive-model :thelen-2003))
+(m/passive-force (* 1.30 0.15) p)   ;=> 75.86 N   (Thelen 2003 Eq. 3, ε₀=0.6, k=5)
+(m/passive-force (* 0.70 0.15) p)   ;=> 0.0       (tension-only)
+(m/passive-force (* 0.70 0.15) (m/make-params))   ;=> -9.0  (default: pushes)
+```
+
+`:thelen-2003` is the literature's curve with OpenSim's shipped constants, so
+anyone who needs passive muscle force out of this repo now gets the number the
+musculoskeletal-simulation field uses instead of deriving it again.
+
+**The default stays `:linear-bidirectional`, and this is a decision, not
+inertia.** `default-params` already said the bidirectional spring "is a lumped
+mass-spring choice, not a claim about muscle tissue" — a design statement that
+predates this investigation and that the sourcing above vindicates rather than
+overturns. What was missing was a reason. Measured, there is one:
+
+| protocol: `simulate` 0.5 s at activation 1.0 from L₀ | `:linear-bidirectional` | `:thelen-2003` |
+|---|---|---|
+| tendon-free `step` — settles at L/L₀ | **0.5037** | **0.1287** |
+| …and is that an equilibrium? | yes: held there at zero velocity, \|a\| < 0.5 m/s² — spring push against active pull | no: still accelerating inward at > 40 m/s²; 0.1287 is where the active force–length parabola hit zero below 0.5 L₀ and damping ran the velocity out |
+| `step-muscle-tendon`, fixed MTU — settles at L/L₀ | 0.7927 | 0.7914 |
+| difference, with a tendon | | **0.17%** |
+
+In the tendon-free path the compressive branch is the *only* thing giving the
+mass a static equilibrium below rest length. Removing it does not produce a
+better muscle; it produces a belly compressed to 13% of rest length at a length
+set by integration history rather than by forces. That is the same error with
+no equilibrium.
+
+What actually holds a muscle out in the body is its load, and this repo has
+that: in `step-muscle-tendon` at that equilibrium the series tendon carries
+822 N against the passive element's 6.2 N (826 N against the tension-only
+element's 0), and there the choice is worth 0.17%. So:
+
+- **`:linear-bidirectional` is a numerical boundary for the tendon-free lumped
+  path.** It is documented as that and not as tissue. It is the default only
+  because changing it would silently multiply every existing passive number in
+  this repo by ~8 at +30% stretch, to fix a path that is incomplete anyway.
+- **`:thelen-2003` is the tissue model.** Select it whenever passive force is
+  the answer rather than a boundary condition — flexion-relaxation, a stretched
+  antagonist, %MVC bookkeeping. Prefer `step-muscle-tendon` with it: that
+  combination is both the literature's curve and a bounded model.
+
+Both measurements are pinned by tests
+(`passive-model-decides-the-tendon-free-equilibrium-test`,
+`passive-model-barely-matters-with-a-tendon-test`), so the argument for the
+default cannot quietly stop being true. `passive-spring-is-linear-and-bidirectional-test`
+is unchanged and still pins 9.0 N at +30% and the negative sign at 0.70 L₀ —
+the default's behaviour is untouched, and all 38 tests that existed before this
+change still pass with their meaning intact.
+
+### Recommendation for `cloud-itonami/suji` — not carried out here
+
+suji is held by another agent; nothing in that repo was written, and this is a
+recommendation for its owner, recorded here so it is durable.
+
+The function is `suji.methods.muscle/passive-force-n`, with the two constants
+`passive-slack-frac` (1.0) and `passive-at-stretch` (0.8).
+
+1. **The shape is already right and should be named.** It is Thelen 2003 Eq. (3)
+   — not "an exponential", *that* exponential, with Thelen's own k^PE = 5.0. The
+   docstring says "Exponential above slack" and cites nobody. Adding the citation
+   costs one line and stops the next reader deriving it again.
+2. **Decide ε₀^M deliberately.** `passive-at-stretch = 0.8` at 1.5 × optimal is
+   arithmetically Thelen's **older-adult** ε₀^M = 0.5, scaled by 0.8. If suji
+   means healthy adults — its cervical-extensor PCSAs are from Kamibayashi &
+   Richmond 1998 cadavers, not an aged cohort — the young-adult value is
+   ε₀^M = 0.6, which is also what OpenSim ships: passive force reaches 1.0 × peak
+   at **1.6** × optimal, i.e. `passive-at-stretch` → 1.0 with the normalising
+   denominator 1.5 → 1.6. That lowers passive tension at every length below
+   1.6 L₀ and so *raises* the %MVC suji reports, which is the conservative
+   direction for an actor whose output is a claim about effort.
+3. **Clamp above the calibrated range, as `ligament-force-n` already does.**
+   `passive-force-n` returns 2.18 × peak active force at 1.6 × optimal — from
+   extrapolating a curve normalised at 1.5. suji's own ligament code refuses to
+   do exactly this, with a `:ref-stretch` clamp and an `at-limit?` predicate, for
+   exactly the reason given here in its comment: "extrapolating gave the nuchal
+   ligament 52,312 N at an ordinary forward-head posture". Muscle passive tissue
+   is not exempt from that argument. A `passive-at-limit?` companion would let
+   consumers show "past the calibrated range" instead of a number.
+4. **Keep the onset at optimal length, but stop calling it settled.** Winters
+   2011 measured it and it is the part that failed (ICC 0.70 ± 0.07): "the
+   model's assumption that passive tension is first developed at L₀ … is not the
+   case for all muscles". The convention is fine; a one-line note that it is a
+   convention, with the measurement against it, is better than silence.
+
+Nothing here argues suji should adopt biomech's linear spring. It should not:
+the sourcing is unanimous that passive muscle is tension-only, and suji is a
+static whole-body model with no tendon-free integration to bound, so it has none
+of the reason biomech has for keeping one.
+
 ## Maturity
 
 | | |
 |---|---|
 | Role | capability |
 | Phase | 1 + 2 — tissue domain + closed-form sim + 3 solver backends |
-| Tests | 38 tests, 123 assertions across 7 namespaces, all green (measured 2026-09-07, `clojure -X:test`, exit 0) |
+| Tests | 44 tests, 147 assertions across 7 namespaces, all green (measured 2026-09-07, `clojure -X:test`, exit 0) |
 | Lint | 0 errors / 0 warnings (`clojure -M:lint --fail-level error`) |
 | Backends | fea (beam2 FEM) · kami-vehicle (mass-spring primitives) · kami-engine-cfd (LBM CFD) |
 
@@ -155,6 +293,14 @@ force loss and capped eccentric force enhancement. A first-order neural
 excitation-to-activation response drives a tension-only series-elastic tendon,
 forming a fixed-length muscle-tendon unit. Semi-implicit Euler integration
 uses sub-stepping.
+
+The parallel elastic element has two models, chosen by `:passive-model`:
+`:linear-bidirectional` (the default, a lumped numerical boundary) and
+`:thelen-2003` (Thelen 2003 Eq. 3 with OpenSim's shipped constants, tension-only
+— the musculoskeletal-simulation literature's curve). Which to use, and why the
+default is the one that is not the literature's, is settled with sources in
+[Which passive model is right](#which-passive-model-is-right-and-what-the-sources-actually-say)
+above.
 
 ## Phase 2 — solver backends via `:local/root`
 

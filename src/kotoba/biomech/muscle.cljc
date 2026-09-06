@@ -6,6 +6,10 @@
   parallel passive element (spring + damper, rest length L0) and an
   active contractile element that pulls toward the origin (shortening),
   scaled by activation, force-length, and force-velocity relationships.
+  The passive element has two models — a linear bidirectional spring
+  (default) and the tension-only exponential the musculoskeletal literature
+  specifies. `passive-force` states which is which and why the default is
+  the one that is not the literature's.
   The muscle-tendon path adds first-order excitation/activation dynamics and
   a tension-only series-elastic tendon; the original instantaneous-activation
   `step` API remains available for compatibility.
@@ -42,8 +46,15 @@
   models the latter; see the boundary section of this repo's README for the
   measured divergence between the two."
   {:mass 0.3
-   :passive-stiffness 200.0        ; N/m
+   :passive-stiffness 200.0        ; N/m, read by :linear-bidirectional only
    :damping 5.0                    ; N·s/m
+   ;; Passive parallel element. `:linear-bidirectional` (the default, and the
+   ;; only behaviour this namespace had before 2026-09-07) or `:thelen-2003`.
+   ;; `passive-force` carries the decision; `passive-force-length-multiplier`
+   ;; carries the sourcing for the two constants below.
+   :passive-model :linear-bidirectional
+   :passive-strain-at-max-force 0.6 ; ε₀^M — Thelen (2003) young adult
+   :passive-shape-factor 5.0        ; k^PE — Thelen (2003)
    :active-max-force 1000.0        ; N
    :rest-length 0.15               ; m
    :optimal-length 0.15            ; m, peak of the active force-length curve
@@ -80,6 +91,120 @@
   [length optimal-length]
   (let [ratio (/ (double length) (double optimal-length))]
     (max 0.0 (- 1.0 (* 4.0 (- ratio 1.0) (- ratio 1.0))))))
+
+(defn passive-force-length-multiplier
+  "Normalized passive (parallel-elastic) force at `length`, as a fraction of
+  maximum isometric force. Tension-only: exactly 0 at and below
+  `optimal-length`, rising exponentially above it.
+
+  This is Thelen (2003) Eq. (3), quoted from the paper:
+
+      F̄^PE = (e^(k^PE (L̄^M − 1) / ε₀^M) − 1) / (e^(k^PE) − 1)
+
+  where F̄^PE is normalized passive muscle force, k^PE is an exponential shape
+  factor and ε₀^M is \"the passive muscle strain due to maximum isometric
+  force\". Thelen sets k^PE = 5 and ε₀^M = 0.60 for young adults, reduced to
+  0.50 for older adults to represent the age-related increase in passive
+  stiffness (Thelen 2003, Table 1, p. 71).
+    Thelen, D.G. (2003) Adjustment of muscle mechanics model parameters to
+    simulate dynamic contractions in older adults. ASME Journal of
+    Biomechanical Engineering 125(1):70-77. DOI 10.1115/1.1531112.
+
+  THE CLAMP IS NOT IN THE PAPER'S EQUATION, AND IS NOT OPTIONAL. Eq. (3) as
+  printed is negative for L̄^M < 1: the numerator e^(negative) − 1 is below
+  zero, so the bare formula makes passive tissue PUSH when shortened. Every
+  shipped implementation of it clamps. OpenSim's does so by construction
+  (OpenSim/Actuators/Thelen2003Muscle.cpp, read 2026-09-07):
+
+      double fpe = 0;
+      ...
+      if(lceN > 1.0){ ... fpe = (t5 - 0.10e1) / (t7 - 0.10e1); }
+      return fpe;
+
+  with defaults `constructProperty_FmaxMuscleStrain(0.6)` and
+  `constructProperty_KshapePassive(5.0)` — the same two numbers as the paper.
+  Defaults here match OpenSim's, so this function reproduces the curve the
+  musculoskeletal-simulation literature actually runs.
+
+  `params` supplies `:optimal-length` (falling back to `:rest-length`),
+  `:passive-strain-at-max-force` (ε₀^M) and `:passive-shape-factor` (k^PE).
+  At length = (1 + ε₀^M) * optimal the result is exactly 1.0, which is what
+  ε₀^M means."
+  [length {:keys [optimal-length rest-length
+                  passive-strain-at-max-force passive-shape-factor]}]
+  (let [opt  (double (or optimal-length rest-length))
+        e0   (double (or passive-strain-at-max-force 0.6))
+        kpe  (double (or passive-shape-factor 5.0))]
+    (when-not (pos? opt)
+      (throw (ex-info "optimal length must be positive" {:optimal-length opt})))
+    (when-not (pos? e0)
+      (throw (ex-info "passive strain at max force must be positive"
+                      {:passive-strain-at-max-force e0})))
+    (let [ratio (/ (double length) opt)]
+      (if (<= ratio 1.0)
+        0.0
+        (/ (- (Math/exp (* kpe (/ (- ratio 1.0) e0))) 1.0)
+           (- (Math/exp kpe) 1.0))))))
+
+(defn passive-force
+  "Tension [N] carried by the parallel elastic element at `length`. Positive =
+  pulling the mass back toward the origin. Selected by `:passive-model`.
+
+  `:linear-bidirectional` (DEFAULT) — k*(L − L0). Resists compression below L0
+  as well as stretch above it, so it returns a NEGATIVE value (a push) when
+  shortened. `:thelen-2003` — `passive-force-length-multiplier` scaled by
+  `:active-max-force`; never negative.
+
+  WHY THE DEFAULT IS THE ONE THAT IS NOT THE LITERATURE'S. Settled 2026-09-07
+  against five sources that could be read and one recorded as unobtainable
+  (Zajac 1989); the full provenance is in this repo's README, and nothing is
+  cited here that was not read. Every readable one of them specifies passive
+  force as tension-only with an onset at or near optimal length, and the one
+  physiology paper among them states it directly — \"Passive tension is borne
+  by a muscle when it is lengthened beyond slack length\" (Ward et al. 2020,
+  Frontiers in Physiology 11:211). On the tissue question there is no
+  disagreement to settle: a muscle belly does not push.
+
+  The bidirectional branch survives because — measured — it is not modelling
+  tissue at all: it is the only static equilibrium the tendon-free `step` path
+  has below rest length. Measured 2026-09-07, holding everything else fixed and
+  running `simulate` for 0.5 s at activation 1.0 from L0:
+
+    :linear-bidirectional  settles at L/L0 = 0.5037, and it is a real force
+                           balance: spring +14.89 N against active −14.74 N
+    tension-only           coasts to L/L0 = 0.1287 and stops there only
+                           because the active force-length parabola is zero
+                           below 0.5*L0 and damping ran the velocity out —
+                           a length set by integration history, not by forces
+
+  A muscle belly compressed to 13% of rest length is not a better answer than
+  a spring that pushes; it is the same error with no equilibrium. What
+  actually holds a muscle out in the body is its load, and this repo has that:
+  in `step-muscle-tendon` the series tendon supplies it, and there the choice
+  BARELY MATTERS — same protocol, fixed MTU length, the two models settle at
+  L/L0 = 0.7927 and 0.7914, a difference of 0.17%, because at that length the
+  tendon carries 822 N against the passive element's 6.2 N (and 826 N against
+  the tension-only element's 0).
+
+  So: `:linear-bidirectional` is a numerical boundary for the tendon-free
+  lumped path and is documented as such, not as a claim about tissue.
+  `:thelen-2003` is the tissue model. If you are modelling passive muscle
+  ANYWHERE THAT PASSIVE FORCE IS THE ANSWER — flexion-relaxation, a stretched
+  antagonist, %MVC bookkeeping — select `:thelen-2003`; the default understates
+  it by 8.4x at +30% stretch (9.0 N against 75.9 N) and has the wrong sign
+  below L0.
+  Prefer `step-muscle-tendon` with `:thelen-2003` over the bare `step` path:
+  that combination is both the literature's curve and a bounded model."
+  [length {:keys [passive-model passive-stiffness rest-length active-max-force]
+           :as params}]
+  (case (or passive-model :linear-bidirectional)
+    :linear-bidirectional
+    (* (double passive-stiffness) (- (double length) (double rest-length)))
+
+    :thelen-2003
+    (* (double active-max-force) (passive-force-length-multiplier length params))
+
+    (throw (ex-info "unknown :passive-model" {:passive-model passive-model}))))
 
 (defn force-velocity-factor
   "Hill force-velocity (concentric): active force falls linearly toward 0 as
@@ -137,21 +262,27 @@
 (defn acceleration
   "Acceleration [m/s^2] of the mass given state, params, activation (0..1).
 
-  m*a = -k*(L - L0)              ; passive spring restoring (toward L0)
+  m*a = -f_passive(L)            ; parallel elastic element, `passive-force`
         - c*v                    ; viscous damping (opposes velocity)
         - act*fl(L)*Fmax         ; active contractile pull (toward origin),
                                  ; scaled by Hill force-length factor fl
 
   i.e. for a stretched (L > L0), outward-moving (v > 0), activating
   muscle, all three force contributions are negative — sign kept explicit
-  so the physics reads."
+  so the physics reads.
+
+  The first term used to be written here as `-k*(L - L0)`. It is now delegated
+  to `passive-force`, which carries both models and the reason the default is
+  the linear bidirectional spring rather than the literature's tension-only
+  curve. Under the default this line computes exactly what it always did."
   [{:keys [length velocity]}
-   {:keys [mass passive-stiffness damping active-max-force rest-length optimal-length
-           max-shortening-velocity eccentric-max-factor]}
+   {:keys [mass damping active-max-force rest-length optimal-length
+           max-shortening-velocity eccentric-max-factor]
+    :as params}
    activation]
   (let [opt       (or optimal-length rest-length)
         vmax      (or max-shortening-velocity 1.0)
-        f-spring  (* -1.0 passive-stiffness (- length rest-length))
+        f-spring  (* -1.0 (passive-force length params))
         f-damper  (* -1.0 damping velocity)
         fl        (force-length-factor length opt)
         fv        (force-velocity-factor velocity vmax (or eccentric-max-factor 1.5))

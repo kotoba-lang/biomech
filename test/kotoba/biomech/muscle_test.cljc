@@ -158,3 +158,131 @@
     (is (rel= 0.0 (f-passive l0)))
     (is (neg? (f-passive (* 0.70 l0)))
         "compressed below rest length the spring pushes out — suji's passive term is 0 here")))
+
+;; ---------------------------------------------------------------------------
+;; Passive force-length provenance (settled 2026-09-07, ADR in this repo's
+;; README: "Which passive model is right, and what the sources actually say").
+;;
+;; The README section is the argument; these tests are the half of it that
+;; cannot rot silently. They pin (a) that `:thelen-2003` really is Thelen's
+;; published curve rather than something shaped like it, (b) that it is
+;; tension-only where the default spring is not, and (c) the two measurements
+;; the decision to KEEP the default rests on. If someone retunes the default
+;; passive element, (c) is what tells them what they just traded away.
+;; ---------------------------------------------------------------------------
+
+(deftest passive-force-length-is-thelen-2003-test
+  ;; Thelen (2003) Eq. (3), F̄^PE = (e^(k(L̄−1)/ε₀) − 1)/(e^k − 1), with the
+  ;; OpenSim-shipped defaults k^PE = 5.0 and ε₀^M = 0.6. Values pinned as
+  ;; decimals produced by running this code, NOT recomputed from the formula
+  ;; inside the test — a test that restates the implementation cannot catch
+  ;; the implementation changing.
+  (let [p   (assoc (muscle/make-params) :passive-model :thelen-2003)
+        opt (:optimal-length p)
+        f   (fn [r] (muscle/passive-force-length-multiplier (* r opt) p))]
+    (is (= 5.0 (:passive-shape-factor p)) "k^PE is Thelen's 5, as OpenSim ships")
+    (is (= 0.6 (:passive-strain-at-max-force p))
+        "ε₀^M is Thelen's young-adult 0.60, as OpenSim ships")
+    ;; ε₀^M *means* the strain at which passive force reaches max isometric
+    ;; force, so the curve must pass through exactly 1.0 at 1 + ε₀ = 1.60.
+    (is (< (Math/abs (- 1.0 (f 1.60))) 1.0e-12)
+        "passive force is 1x max isometric force at 1 + ε₀ = 1.60 optimal")
+    (is (rel= 0.075858180021243590 (f 1.30)) "Thelen curve at 1.30 optimal")
+    (is (rel= 0.43076271787018416  (f 1.50)) "Thelen curve at 1.50 optimal")
+    ;; strictly increasing above optimal
+    (is (< (f 1.05) (f 1.10) (f 1.20) (f 1.30) (f 1.40) (f 1.50) (f 1.60)))))
+
+(deftest thelen-passive-is-tension-only-and-the-default-is-not-test
+  ;; The sign question, which is the half of the biomech/suji disagreement
+  ;; that is not a matter of magnitude. Four sources — Thelen 2003 as OpenSim
+  ;; ships it, Millard 2013, Winters 2011, Ward 2020 — specify passive force
+  ;; as tension-only with an onset at or near optimal length.
+  (let [base (muscle/make-params)
+        opt  (:optimal-length base)
+        thelen (assoc base :passive-model :thelen-2003)
+        linear (assoc base :passive-model :linear-bidirectional)]
+    (doseq [r [0.50 0.70 0.90 1.00]]
+      (is (zero? (muscle/passive-force (* r opt) thelen))
+          (str "tension-only: exactly zero at " r " optimal")))
+    ;; the shipped default disagrees below optimal in SIGN, not in size
+    (is (neg? (muscle/passive-force (* 0.70 opt) linear))
+        "the default spring pushes out when compressed — that is why it is
+         documented as a numerical boundary and not as muscle tissue")
+    ;; ...and understates by ~8x where both are in tension
+    (is (rel= 9.0 (muscle/passive-force (* 1.30 opt) linear)))
+    (is (rel= 75.858180021243580 (muscle/passive-force (* 1.30 opt) thelen)))))
+
+(deftest suji-passive-curve-is-thelen-with-the-older-adult-strain-test
+  ;; Pins biomech's half of an identity established 2026-09-07: suji's
+  ;; `passive-force-n` is not a differently-shaped curve, it is THIS curve
+  ;; with ε₀^M = 0.50 — Thelen's OLDER-ADULT value — and an extra 0.8 factor.
+  ;; suji's own published fractions of peak force are 0.1036 / 0.8000 / 2.1840
+  ;; at 1.30 / 1.50 / 1.60 optimal; they are reproduced here exactly.
+  ;; Like `force-length-grid-pinned-against-suji-test`, this pins only OUR
+  ;; side: it cannot notice suji changing, and that is stated, not implied.
+  (let [p (assoc (muscle/make-params)
+                 :passive-model :thelen-2003
+                 :passive-strain-at-max-force 0.5)
+        opt (:optimal-length p)
+        suji (fn [r] (* 0.8 (muscle/passive-force-length-multiplier (* r opt) p)))]
+    (is (rel= 0.10357575695074611 (suji 1.30)) "suji 0.1036 of peak at 1.30")
+    (is (rel= 0.80000000000000000 (suji 1.50)) "suji 0.8000 of peak at 1.50")
+    (is (rel= 2.18395044753207030 (suji 1.60)) "suji 2.1840 of peak at 1.60")))
+
+(deftest passive-model-decides-the-tendon-free-equilibrium-test
+  ;; THE MEASUREMENT THE DECISION RESTS ON. In the tendon-free `step` path the
+  ;; bidirectional spring is the only static equilibrium below rest length:
+  ;; it settles at a real force balance, whereas a tension-only element leaves
+  ;; the mass coasting until the active force-length parabola hits zero below
+  ;; 0.5*L0 and damping runs the velocity out. 0.1287 is not an equilibrium —
+  ;; it is where the integration happened to stop.
+  (let [base (muscle/make-params)
+        l0   (:rest-length base)
+        end  (fn [pm] (-> (muscle/simulate (muscle/make-state l0 0.0)
+                                           (assoc base :passive-model pm)
+                                           1.0 1.0e-3 500)
+                          peek :length (/ l0)))]
+    (is (< (Math/abs (- 0.50374 (end :linear-bidirectional))) 1.0e-4)
+        "default settles at L/L0 = 0.5037")
+    (is (< (Math/abs (- 0.12866 (end :thelen-2003))) 1.0e-4)
+        "tension-only coasts to L/L0 = 0.1287, set by history not by forces")
+    ;; 0.5037 really is a force balance and not just where motion stopped:
+    ;; held there at zero velocity under full activation, the net acceleration
+    ;; is ~0. Measured through `acceleration`, the same code the sim runs.
+    (let [l  (* 0.50373596762521 l0)
+          st (muscle/make-state l 0.0)
+          a  (fn [pm] (muscle/acceleration st (assoc base :passive-model pm) 1.0))]
+      (is (< (Math/abs (a :linear-bidirectional)) 0.5)
+          "at 0.5037 the spring's push and the active pull cancel: |a| < 0.5 m/s^2")
+      ;; the same point under a tension-only element is nowhere near balance —
+      ;; there is simply nothing left to oppose the active pull.
+      (is (< (a :thelen-2003) -40.0)
+          "tension-only has no equilibrium there: still accelerating inward
+           at more than 40 m/s^2, because passive force is exactly zero"))))
+
+(deftest passive-model-barely-matters-with-a-tendon-test
+  ;; The other half of the argument: wherever this repo models a muscle with
+  ;; the load that actually holds it out — a series tendon — the choice is a
+  ;; 0.17% effect, because the tendon carries ~826 N against the passive
+  ;; element's ~6 N. So the default is defensible only in the tendon-free
+  ;; path, and `step-muscle-tendon` + `:thelen-2003` costs almost nothing.
+  (let [base (muscle/make-params)
+        l0   (:rest-length base)
+        mtu  (+ l0 (:tendon-slack-length base) 0.01)
+        end  (fn [pm] (-> (muscle/simulate-muscle-tendon
+                           (muscle/make-state l0 0.0 1.0)
+                           (assoc base :passive-model pm) 1.0 mtu 1.0e-3 500)
+                          peek :length (/ l0)))
+        a (end :linear-bidirectional)
+        b (end :thelen-2003)]
+    (is (< (Math/abs (- 0.79270 a)) 1.0e-4) "default MTU equilibrium 0.7927")
+    (is (< (Math/abs (- 0.79137 b)) 1.0e-4) "Thelen MTU equilibrium 0.7914")
+    (is (< (/ (Math/abs (- a b)) a) 2.0e-3)
+        "with a tendon the two passive models agree to better than 0.2%")))
+
+(deftest unknown-passive-model-is-refused-test
+  ;; A passive model this namespace does not implement must not fall through
+  ;; to a default and be reported as a result.
+  (let [p (assoc (muscle/make-params) :passive-model :not-a-model)]
+    (is (thrown? #?(:clj clojure.lang.ExceptionInfo :cljs cljs.core/ExceptionInfo)
+                 (muscle/passive-force 0.15 p)))))

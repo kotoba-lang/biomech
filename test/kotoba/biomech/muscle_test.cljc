@@ -112,3 +112,49 @@
     (is (< 0.0 (:activation final) 1.0))
     (is (< (:length final) (:rest-length p)))
     (is (pos? (muscle/tendon-force final p mtu-length)))))
+
+;; ---------------------------------------------------------------------------
+;; Boundary with cloud-itonami/suji (measured 2026-09-07)
+;;
+;; suji carries its own Hill force-length in `suji.methods.muscle`, and its
+;; docstring already says the duplication is deliberate. Running BOTH over the
+;; same normalized grid in one JVM showed the ACTIVE curve is the same closed
+;; form to floating point (worst |diff| 6.7e-16 across 17 points), and the
+;; PASSIVE element is a different model entirely (see README).
+;;
+;; THIS TEST PINS ONLY THE biomech HALF. It cannot notice suji changing —
+;; automating the cross-check would put suji on this repo's classpath, and suji
+;; declines to depend on biomech for the mirror-image reason (biomech pulls
+;; three solver repos it does not want in a browser bundle). The comparison is
+;; therefore run by hand; the numbers and the method are in the README.
+;; ---------------------------------------------------------------------------
+
+(def ^:private suji-comparison-grid
+  "[length/optimal, expected force-length factor] — the exact grid the
+  2026-09-07 cross-repo comparison used."
+  [[0.40 0.00] [0.50 0.00] [0.60 0.36] [0.70 0.64] [0.75 0.75] [0.80 0.84]
+   [0.90 0.96] [0.95 0.99] [1.00 1.00] [1.05 0.99] [1.10 0.96] [1.20 0.84]
+   [1.25 0.75] [1.30 0.64] [1.40 0.36] [1.50 0.00] [1.60 0.00]])
+
+(deftest force-length-grid-pinned-against-suji-test
+  (let [opt (:optimal-length (muscle/make-params))]
+    (doseq [[ratio expected] suji-comparison-grid]
+      (is (rel= expected (muscle/force-length-factor (* ratio opt) opt))
+          (str "force-length at " ratio " x optimal")))))
+
+(deftest passive-spring-is-linear-and-bidirectional-test
+  ;; The measured behaviour the default-params docstring used to misstate:
+  ;; f_passive = k*(L - L0), 9.0 N at +30% stretch (NOT the ~40 N once claimed),
+  ;; and non-zero BELOW rest length too — this element pushes back when
+  ;; compressed, where suji's tension-only passive term is exactly zero there.
+  (let [p (muscle/make-params)
+        k (:passive-stiffness p)
+        l0 (:rest-length p)
+        ;; with v=0 and activation=0 the only force is the spring, so
+        ;; f_passive = -m*a is measured through the same code the sim runs.
+        f-passive (fn [l] (- (* (:mass p) (muscle/acceleration (muscle/make-state l 0.0 0.0) p 0.0))))]
+    (is (rel= 9.0 (f-passive (* 1.30 l0))) "+30% stretch is 9.0 N, not 40 N")
+    (is (rel= (* k 0.30 l0) (f-passive (* 1.30 l0))) "and it is exactly k*(L-L0)")
+    (is (rel= 0.0 (f-passive l0)))
+    (is (neg? (f-passive (* 0.70 l0)))
+        "compressed below rest length the spring pushes out — suji's passive term is 0 here")))

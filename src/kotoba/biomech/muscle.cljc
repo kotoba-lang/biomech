@@ -23,9 +23,24 @@
 
 (def default-params
   "Representative lumped params for an adult skeletal-muscle belly:
-  mass ~300 g, rest length ~15 cm, peak isometric force ~1 kN, passive
-  stiffness tuned so a +30% stretch gives ~40 N passive restoring force.
-  Numbers are order-of-magnitude teaching defaults, not patient-specific."
+  mass ~300 g, rest length ~15 cm, peak isometric force ~1 kN.
+  Numbers are order-of-magnitude teaching defaults, not patient-specific.
+
+  CORRECTED 2026-09-07. This docstring used to claim the passive stiffness was
+  \"tuned so a +30% stretch gives ~40 N passive restoring force\". Measured by
+  running `acceleration` at L = 1.30 * L0 with zero velocity and zero
+  activation, it gives **9.0 N** (200 N/m * 0.045 m) — the claim was 4.4x the
+  behaviour of the parameter next to it. Nothing tested the sentence, so it
+  survived. The parameter is left alone and the sentence is corrected: retuning
+  k to make the old prose true would have changed every passive number in this
+  repo to rescue a comment.
+
+  The passive element here is a LINEAR, BIDIRECTIONAL spring about rest-length:
+  it resists compression below L0 as well as stretch above it. That is a lumped
+  mass-spring choice, not a claim about muscle tissue — real passive muscle
+  tension is tension-only and stiffens exponentially. `cloud-itonami/suji`
+  models the latter; see the boundary section of this repo's README for the
+  measured divergence between the two."
   {:mass 0.3
    :passive-stiffness 200.0        ; N/m
    :damping 5.0                    ; N·s/m

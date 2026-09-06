@@ -179,6 +179,32 @@
   nobody looked at."
   [t] (vec (get-in t [:provenance :unobtained])))
 
+(defn scalar-provenance
+  "How the entry's SCALAR stiffness relates to the sources actually read, or
+  nil if the entry has never been through provenance work.
+
+  TWO DIFFERENT THINGS ARE BOTH CALLED `cited`, AND CONFLATING THEM IS THE
+  FAILURE THIS KEY EXISTS TO PREVENT. An entry can carry a real citation whose
+  numbers bound its scalar without any source having reported that scalar. The
+  ligament is the original case: Neumann 1992 reports an ALL modulus of
+  759 +/- 336 MPa, the entry carries 5.0e8 Pa, and 5.0e8 is INSIDE 423-1095 MPa
+  but is nobody's measurement. Reading `has a citation` as `this number was
+  measured` is wrong for that entry and right for the tendon, whose 1.2e9 is
+  verbatim Maganaris & Paul's own figure.
+
+  Values:
+    :sourced                — the scalar is a number a read source reports, or a
+                              stated identity applied to one (e.g. E = 2G(1+nu)
+                              with G measured and the identity written out in
+                              the entry).
+    :unsourced-but-bounded  — no source read reports this value. Sources read
+                              bound it, and the entry states where it sits
+                              relative to them. This is NOT `verified`.
+
+  A nil answer means the entry predates this work; it is not a third grade of
+  confidence."
+  [t] (get-in t [:provenance :scalar]))
+
 (defn isotropically-admissible?
   "True if this tissue's Poisson's ratio can be used by an ISOTROPIC linear-elastic
   solver.

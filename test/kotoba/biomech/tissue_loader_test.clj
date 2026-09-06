@@ -191,3 +191,42 @@
     (testing "and the sentence that justifies reading sigma(offset) as swelling pressure"
       (is (re-find #"shift in load carriage from fluid pressurization and swelling pressure to deformation of the solid matrix"
                    (or (read-of "Annulus-Fibrosus" #"shift in load carriage") ""))))))
+
+;; ---------------------------------------------------------------------------
+;; PROVENANCE FOR THE TEN TISSUES THAT CITED NOBODY.
+;;
+;; Every test below pins ONE claim: that a specific number in tissues.edn is the
+;; number a specific paper reports, in the words that paper used. The pattern is
+;; deliberate -- an assertion on the value alone would pass against a value
+;; someone invented, and an assertion on the citation alone would pass against a
+;; citation attached to the wrong number. Pinning the value AND requiring the
+;; quotation that justifies it to contain that value is what makes the pair
+;; inseparable.
+;; ---------------------------------------------------------------------------
+
+(defn- ^:private tissue-named [nm]
+  (tissue/find-tissue (loader/presets) nm))
+
+(defn- ^:private read-matching
+  "The :read text of the first source of tissue `nm` matching `needle`, or \"\"."
+  [nm needle]
+  (or (->> (tissue/sources (tissue-named nm))
+           (map :read)
+           (filter #(re-find needle %))
+           first)
+      ""))
+
+(deftest tendon-modulus-is-maganaris-own-number-test
+  ;; The tendon is the one entry where the carried value and the source's value
+  ;; are the SAME number rather than one bounding the other. That distinction is
+  ;; the whole content of :scalar, so it is asserted here and not assumed.
+  (let [t (tissue-named "Tendon")]
+    (is (= 1.2e9 (tissue/youngs-modulus t)))
+    (is (= :sourced (tissue/scalar-provenance t))
+        "1.2 GPa is Maganaris & Paul's own figure, not a value inside a band")
+    (is (re-find #"Young's modulus at maximum isometric load were 161 N mm-1 and 1\.2 GPa"
+                 (read-matching "Tendon" #"1\.2 GPa"))
+        "the quotation must contain the very number the entry carries")
+    (testing "and the regime that makes 1.2 GPa a floor rather than a ceiling"
+      (is (re-find #"operates within the elastic 'toe' region"
+                   (read-matching "Tendon" #"toe"))))))

@@ -45,10 +45,33 @@
   {:name "Tendon"
    :tissue-type :tendon
    :model {:type :linear-elastic
+           ;; 1.2 GPa IS THE SOURCE'S OWN NUMBER, not a value that happens to
+           ;; sit inside a band. Maganaris & Paul 1999 report the Young's
+           ;; modulus of human tibialis anterior tendon in vivo as 1.2 GPa at
+           ;; maximum isometric load. The value carried here predates the
+           ;; citation and is unchanged.
            :youngs-modulus 1.2e9
+           ;; NOT SOURCED. No source read here measured a Poisson's ratio for
+           ;; tendon; 0.40 is inherited from the uncited era and is retained
+           ;; only because removing it would hand the fea bridge its 0.3
+           ;; default silently.
            :poissons-ratio 0.40
-           :density 1100}
-   :source "representative; tendon E in [0.8,1.5] GPa along fibre direction"}
+           ;; NOT SOURCED. Same status as the Poisson's ratio.
+           :density 1100
+           :directional
+           {:basis "Maganaris & Paul 1999, human tibialis anterior tendon in vivo, five males, neutral ankle. The tendon was loaded along its long axis by percutaneous stimulation of the muscle; there is one direction in this experiment."
+            :not-measured "Transverse and shear moduli. A tendon loaded across its fibres is a different and far lower number, and no source read here measured it."}}
+   :source "Maganaris CN & Paul JP 1999 J Physiol 521(Pt 1):307-313 (PMID 10562354): Young's modulus 1.2 GPa. SPECIMEN: human tibialis anterior tendon, IN VIVO, five males, neutral ankle position; tendon force from joint moment / MRI moment arm, elongation from real-time ultrasonography. DIRECTION: along the tendon long axis, in tension. RATE: quasi-static ramped isometric contraction driven by increasing percutaneous stimulation voltage, not impact. REGIME: this is the modulus AT MAXIMUM ISOMETRIC LOAD (stress 25 MPa, strain 2.5%), and the paper's own conclusion is that even there the tendon is still inside the nonlinear 'toe' region -- so 1.2 GPa is a secant modulus at one physiological load, not the linear-region modulus of a tendon stretched to failure."
+   :provenance
+   {:scalar :sourced
+    :sources
+    [{:citation "Maganaris CN, Paul JP. In vivo human tendon mechanical properties. J Physiol. 1999;521(Pt 1):307-313."
+      :doi "10.1111/j.1469-7793.1999.00307.x"
+      :pmid "10562354"
+      :obtained :abstract
+      :retrieved-via :europe-pmc-rest
+      :read "Verbatim: \"The tendon force and displacement at maximum isometric load were 530 N and 4.1 mm, and the corresponding stress and strain values were 25 MPa and 2.5 %, respectively. The tendon stiffness and Young's modulus at maximum isometric load were 161 N mm-1 and 1.2 GPa, respectively.\" And the regime sentence, verbatim: \"These results are in agreement with previous reports on in vitro testing of isolated tendons and suggest that under physiological loading the TA tendon operates within the elastic 'toe' region.\" Method, verbatim: \"Measurements were taken in five males at the neutral ankle position\" and involved isometric dynamometry with percutaneous electrical stimulation, real-time ultrasonography for tendon origin displacement and cross-sectional area, and MRI for tendon length and moment arm."
+      :caveat "A tendon still inside its toe region has a modulus that RISES with load, so 1.2 GPa is a point on a rising curve and not a ceiling. n = 5, one tendon, one joint angle, one species, and the modulus is a secant value at the single load the stimulator could reach -- it is not the linear-region modulus of a tendon pulled to failure, and it must not be read as one."}]}}
 
   {:name "Cartilage"
    :tissue-type :cartilage

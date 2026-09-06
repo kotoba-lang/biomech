@@ -87,11 +87,66 @@
 
   {:name "Liver"
    :tissue-type :organ
+   ;; :hyperelastic IS NOT FROM THE SOURCE. Rouvière's measurement is a
+   ;; small-amplitude harmonic shear stiffness, i.e. a LINEAR quantity. The tag
+   ;; is inherited from the uncited era and is left alone because liver really
+   ;; is nonlinear at large deformation -- but no source read here fitted a
+   ;; hyperelastic law to it, and the tag should not be read as evidence.
    :model {:type :hyperelastic
-           :youngs-modulus 3.0e3
+           ;; 3.0e3 -> 6.0e3, AND THE OLD VALUE LOOKS LIKE A UNIT-OF-QUANTITY
+           ;; ERROR RATHER THAN A BAD GUESS. The old note read "liver E in
+           ;; [1,5] kPa per MR elastography". MR elastography does not report a
+           ;; Young's modulus. It reports a SHEAR stiffness, and for healthy
+           ;; human liver that number is 2.0 +/- 0.3 kPa. Writing an MRE figure
+           ;; into a Young's-modulus field understates E by a factor of three,
+           ;; which is exactly the gap between 2-3 kPa and the value below.
+           ;;
+           ;; THE CONVERSION IS AN IDENTITY, AND IT IS WRITTEN OUT SO IT CAN BE
+           ;; ARGUED WITH. E = 2G(1+nu); at the incompressible limit nu -> 1/2
+           ;; that is E = 3G = 6.0 kPa. At this entry's own nu = 0.45 it would
+           ;; be 5.8 kPa -- a 3% difference, five times smaller than the
+           ;; source's own +/-0.3 kPa (15%) standard deviation, so the choice of
+           ;; nu does not matter at the precision available. 6.0e3 is the
+           ;; incompressible value because that is the convention every MRE
+           ;; paper converts under.
+           ;;
+           ;; This is NOT the nucleus-pulposus situation. That tissue's shear
+           ;; stress relaxes NEARLY TO ZERO, so it has no static modulus to
+           ;; derive. Liver has a finite, repeatable shear stiffness; deriving E
+           ;; from it is applying an identity, not inventing a solid.
+           :youngs-modulus 6.0e3
+           :shear-modulus 2.0e3
+           :shear-modulus-sd 3.0e2
+           ;; NOT SOURCED. Neither Poisson's ratio nor density was measured by
+           ;; any source read here.
            :poissons-ratio 0.45
-           :density 1060}
-   :source "representative; liver E in [1,5] kPa per MR elastography, near-incompressible"}
+           :density 1060
+           :capsule
+           {:basis "Karimi & Shojaei 2018, 20 human cadavers, excised Glisson's capsule. A DIFFERENT TISSUE FROM THE PARENCHYMA ABOVE and the reason a single 'liver' modulus is a simplification worth naming: the capsule is the membrane the parenchyma is wrapped in, and it is roughly two orders of magnitude stiffer in compression."
+            :tensile-youngs-modulus-axial 1.216e4
+            :tensile-youngs-modulus-transverse 7.17e3
+            :compressive-youngs-modulus-axial 1.9654e5
+            :compressive-youngs-modulus-transverse 1.1241e5
+            :note "Anisotropic by 1.7x in tension and 1.75x in compression, and roughly 16x stiffer in compression than in tension. NO NUMBER IN THE :model SCALARS ABOVE COMES FROM THIS."}}
+   :source "Rouviere O et al. 2006 Radiology 240(2):440-448 (PMID 16864671): mean liver SHEAR stiffness 2.0 +/- 0.3 kPa in 12 healthy volunteers by MR elastography. The :youngs-modulus 6.0e3 is E = 3G under incompressibility, written out in the :model comments. SPECIMEN: 12 healthy human volunteers in vivo (eight men, four women, mean age 26.7 y, range 19-39), transcostal approach. DIRECTION: none -- MRE inversion returns an ISOTROPIC shear stiffness, and no source read here measured a direction dependence for liver parenchyma. RATE: NOT RECORDED. The abstract does not state the mechanical drive frequency, and MRE stiffness is frequency-dependent, so this entry cannot say at what rate 2.0 kPa applies. CHANGED HERE: :youngs-modulus 3.0e3 -> 6.0e3, because 3.0e3 cited nobody and appears to be an MRE shear stiffness written into a Young's-modulus field."
+   :provenance
+   {:scalar :sourced
+    :sources
+    [{:citation "Rouviere O, Yin M, Dresner MA, Rossman PJ, Burgart LJ, Fidler JL, Ehman RL. MR elastography of the liver: preliminary results. Radiology. 2006;240(2):440-448."
+      :doi "10.1148/radiol.2402050606"
+      :pmid "16864671"
+      :obtained :abstract
+      :retrieved-via :europe-pmc-rest
+      :read "Verbatim: \"The mean liver shear stiffness was significantly lower in volunteers (mean, 2.0 kPa +/- 0.3 [standard deviation]) than it was in patients with liver fibrosis (mean, 5.6 kPa +/- 5.0; median, 3.7 kPa; range, 2.7-19.2 kPa; P < .001).\" Method, verbatim: \"liver stiffness was measured with MR elastography in 12 healthy volunteers (eight men, four women; mean age, 26.7 years; age range, 19-39 years) by using the subcostal approach and the transcostal approach\", and \"In volunteers, the transcostal approach surprisingly yielded better shear waves in the liver than did the subcostal approach.\""
+      :caveat "THE DRIVE FREQUENCY IS NOT IN THE ABSTRACT, and MRE shear stiffness rises with frequency, so 2.0 kPa is a number without the rate that would make it reproducible. That is a real gap and is recorded rather than filled with the 60 Hz that most hepatic MRE happens to use. Note also what the same sentence says about the fibrosis arm: 2.7-19.2 kPa. A single healthy-liver modulus describes one end of a range that disease moves by an order of magnitude, so this scalar is a healthy-volunteer value and nothing else."}
+     {:citation "Karimi A, Shojaei A. An Experimental Study to Measure the Mechanical Properties of the Human Liver. Dig Dis. 2018;36(2):150-155."
+      :doi "10.1159/000481344"
+      :pmid "29131053"
+      :obtained :abstract
+      :retrieved-via :europe-pmc-rest
+      :supplies-number? false
+      :read "Verbatim: \"The results revealed the tensile elastic modulus of 12.16 +/- 1.20 (mean +/- SD) and 7.17 +/- 0.85 kPa under the axial and transversal loadings respectively. Correspondingly, the compressive elastic modulus of 196.54 +/- 13.15 and 112.41 +/- 8.98 kPa were observed under the axial and transversal loadings respectively.\" And: \"The capsule showed a stiffer behavior under the compressive load compared to the tensile one. In addition, the axial elastic modulus of the capsule was found to be higher than that of the transversal one.\" Specimen, verbatim: \"20 human cadavers were autopsied and their liver capsules were excised\"."
+      :caveat "THIS PAPER MEASURES THE CAPSULE, NOT THE PARENCHYMA, AND NO SCALAR IN THIS ENTRY COMES FROM IT -- hence :supplies-number? false. It is recorded because it is the strongest available evidence that \"liver\" is not one material: the capsule is anisotropic in both tension and compression, about 16x stiffer in compression than tension, and its compressive modulus is roughly 30x the parenchyma's Young's modulus carried above. A whole-organ model with one isotropic modulus has averaged that structure away."}]}}
 
   {:name "Tendon"
    :tissue-type :tendon

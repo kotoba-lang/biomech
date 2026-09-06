@@ -36,7 +36,11 @@
     ;; every quantity read for human skin; 1.18e6 is Ni Annaidh's measured
     ;; initial slope. nu and density are still the legacy values.
     (is (= 1.18e6 (E "Skin")))            (is (= 0.45 (nu "Skin")))            (is (= 1100 (d "Skin")))
-    (is (= 3.0e3  (E "Liver")))           (is (= 0.45 (nu "Liver")))           (is (= 1060 (d "Liver")))
+    ;; LIVER'S MODULUS IS NO LONGER LEGACY. 3.0e3 cited nobody and looks like
+    ;; an MR-elastography SHEAR stiffness written into a Young's-modulus field;
+    ;; 6.0e3 is E = 3G from Rouviere's measured 2.0 kPa. nu and density are
+    ;; still the legacy values.
+    (is (= 6.0e3  (E "Liver")))           (is (= 0.45 (nu "Liver")))           (is (= 1060 (d "Liver")))
     (is (= 1.2e9  (E "Tendon")))          (is (= 0.40 (nu "Tendon")))          (is (= 1100 (d "Tendon")))
     ;; CARTILAGE'S POISSON'S RATIO IS NO LONGER LEGACY. 0.40 cited nobody;
     ;; Keenan 2009 measured 0.00-0.05 in human cartilage and 0.05 is the high
@@ -318,3 +322,42 @@
     (testing "and the quotation carries the significance levels, not a value"
       (is (re-find #"dependent upon the orientation of the Langer lines \(P<0\.0001-P=0\.046\)"
                    (read-matching "Skin" #"Langer"))))))
+
+(deftest liver-youngs-modulus-is-derived-from-the-measured-shear-stiffness-test
+  ;; MR ELASTOGRAPHY DOES NOT REPORT A YOUNG'S MODULUS. It reports a shear
+  ;; stiffness, and the old entry carried an MRE-sized number in the
+  ;; Young's-modulus field. The measured quantity is now in :shear-modulus and
+  ;; the scalar is the identity E = 3G applied to it, so the derivation can be
+  ;; checked here rather than believed.
+  (let [t (tissue-named "Liver")]
+    (is (= 2.0e3 (tissue/shear-modulus t)) "Rouviere's measured shear stiffness")
+    (is (= 3.0e2 (get-in t [:model :shear-modulus-sd])))
+    (is (= 6.0e3 (tissue/youngs-modulus t)))
+    (is (= (* 3.0 (tissue/shear-modulus t)) (tissue/youngs-modulus t))
+        "E must BE 3G, not merely near it -- the identity is the whole claim")
+    (testing "and nu = 0.45 would move it by less than the source's own SD"
+      (let [e-at-nu (* 2.0 (tissue/shear-modulus t)
+                       (+ 1.0 (tissue/poissons-ratio t)))]
+        (is (< (abs (- (tissue/youngs-modulus t) e-at-nu))
+               (* 3.0 (get-in t [:model :shear-modulus-sd])))
+            "3% from the nu choice against 15% from the measurement spread")))
+    (is (= :sourced (tissue/scalar-provenance t)))))
+
+(deftest liver-capsule-source-supplies-no-number-and-says-so-test
+  ;; A SOURCE READ, WITH NUMBERS, THAT BACKS NOTHING HERE. Karimi & Shojaei
+  ;; measured Glisson's capsule, not the parenchyma. Filing it under :sources
+  ;; without a marker would let a reader attribute the entry's scalars to it;
+  ;; filing it under :unobtained would be false, because it was obtained.
+  (let [t (tissue-named "Liver")
+        srcs (tissue/sources t)
+        cap (first (filter #(= "29131053" (:pmid %)) srcs))
+        parenchyma (first (filter #(= "16864671" (:pmid %)) srcs))]
+    (is (some? cap))
+    (is (false? (:supplies-number? cap))
+        "the capsule paper must declare that it backs no value in this entry")
+    (is (nil? (:supplies-number? parenchyma))
+        "and absence of the key must still mean 'this one does supply numbers'")
+    (testing "the capsule numbers are carried under their own key, not as liver"
+      (is (= 1.216e4 (get-in t [:model :capsule :tensile-youngs-modulus-axial])))
+      (is (not= (get-in t [:model :capsule :tensile-youngs-modulus-axial])
+                (tissue/youngs-modulus t))))))

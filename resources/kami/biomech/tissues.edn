@@ -75,11 +75,78 @@
 
   {:name "Cartilage"
    :tissue-type :cartilage
-   :model {:type :hyperelastic
+   ;; :biphasic, NOT :hyperelastic. The previous tag asserted that this tissue
+   ;; is nonlinearly stiffening, and no source said so. Keenan 2009 fits a
+   ;; LINEAR biphasic model -- solid matrix plus interstitial fluid, three
+   ;; coefficients -- and those three coefficients are what this entry now
+   ;; carries. Trading an unsourced constitutive claim for the one the source
+   ;; actually used is the point.
+   :model {:type :biphasic
+           ;; THE OLD ENTRY WROTE AN AGGREGATE MODULUS INTO :youngs-modulus,
+           ;; AND ITS OWN :source SAID SO: "articular cartilage compressive
+           ;; aggregate modulus approx 0.5-1.5 MPa". That is the category error
+           ;; kotoba.biomech.tissue/aggregate-modulus exists to name -- H_A is
+           ;; the equilibrium stiffness of a laterally CONFINED specimen and is
+           ;; a different experiment from a Young's modulus.
+           ;;
+           ;; THE CONFLATION SURVIVED BECAUSE OF A COINCIDENCE, AND THE
+           ;; COINCIDENCE IS ITSELF SOURCED. For an isotropic linear elastic
+           ;; solid, H_A = E(1-nu) / ((1+nu)(1-2nu)). At Keenan's measured
+           ;; nu = 0.05 the factor is 0.95 / (1.05 * 0.90) = 1.0053, so H_A and
+           ;; E differ by 0.53% -- roughly 100x smaller than the 0.48-1.58 MPa
+           ;; spread Keenan measured across five sites of ONE tibial plateau.
+           ;; Writing 8.0e5 in both fields is therefore defensible to the
+           ;; precision the source supports. They remain different quantities,
+           ;; and they now have different field names.
            :youngs-modulus 8.0e5
-           :poissons-ratio 0.40
-           :density 1100}
-   :source "representative; articular cartilage compressive aggregate modulus approx 0.5-1.5 MPa, hyperelastic/stiffening under load"}
+           :aggregate-modulus 8.0e5
+           :aggregate-modulus-range [4.8e5 1.58e6]
+           ;; 0.40 -> 0.05. THE LARGEST CORRECTION IN THIS FILE, AND THE OLD
+           ;; VALUE CITED NOBODY. Keenan 2009 measured Poisson's ratio
+           ;; 0.00-0.05 in human cartilage; 0.05 is the HIGH end of that band
+           ;; and is taken here for the same reason the nucleus takes the low
+           ;; end of its |G*| band -- a named endpoint of a measured range is
+           ;; readable, a midpoint of it is invented.
+           ;;
+           ;; DIRECTION OF THE ERROR, STATED. Isotropic bulk modulus is
+           ;; K = E / (3(1-2nu)). At nu = 0.40 that is 1.667 E; at nu = 0.05 it
+           ;; is 0.370 E. The old value made cartilage 4.5x more resistant to
+           ;; volume change than the only measurement read here says it is. A
+           ;; near-zero Poisson's ratio is not an oddity of this dataset: it is
+           ;; what a biphasic fit reports, because at equilibrium the fluid has
+           ;; left and the drained solid matrix barely resists volume change.
+           :poissons-ratio 0.05
+           :poissons-ratio-range [0.0 0.05]
+           ;; Keenan's third coefficient. The LOW end of 1.7-5.4 x 10^-15
+           ;; m^4/(N*s), named rather than averaged, on the same convention as
+           ;; the modulus above.
+           :permeability 1.7e-15
+           :permeability-range [1.7e-15 5.4e-15]
+           ;; NOT SOURCED. No source read here weighed cartilage.
+           :density 1100
+           :sites
+           {:basis "Keenan 2009: creep indentation at five sites across ONE human tibial plateau. The 0.48-1.58 MPa spread is BETWEEN THOSE FIVE SITES, not between donors -- a threefold range inside a single joint surface."
+            :per-site-values :not-in-abstract
+            :independent-agreement "Athanasiou 1991 measured the same three coefficients by the same method across five species and found site to matter in a stated direction: the anterior patellar groove has the LOWEST aggregate modulus, the HIGHEST permeability and the LOWEST Poisson's ratio of all sites tested. Its abstract publishes no number, so no value here comes from it -- but it is an independent statement that one scalar cannot describe this tissue across a joint."}}
+   :source "Keenan KE et al. 2009 Comput Methods Biomech Biomed Engin 12(4):415-422 (PMID 19675978): human cartilage aggregate modulus 0.48-1.58 MPa, Poisson's ratio 0.00-0.05, permeability 1.7-5.4 x 10^-15 m^4/(N*s). SPECIMEN: five sites across a human tibial plateau, in vitro (species and joint confirmed from the PubMed MeSH record -- Humans, Knee Joint, Tibia, In Vitro Techniques -- not from the abstract text). LOADING: creep indentation, fitted with a linear biphasic finite-element interpolant; the modulus is therefore an EQUILIBRIUM confined stiffness, not a transient or impact response. RATE: quasi-static creep to equilibrium. CHANGED HERE: :poissons-ratio 0.40 -> 0.05, because 0.40 cited nobody and 0.00-0.05 is what was measured; and the aggregate modulus now has its own field instead of masquerading as a Young's modulus."
+   :provenance
+   {:scalar :unsourced-but-bounded
+    :sources
+    [{:citation "Keenan KE, Kourtis LC, Besier TF, Lindsey DP, Gold GE, Delp SL, Beaupre GS. New resource for the computation of cartilage biphasic material properties with the interpolant response surface method. Comput Methods Biomech Biomed Engin. 2009;12(4):415-422."
+      :doi "10.1080/10255840802654319"
+      :pmid "19675978"
+      :pmcid "PMC2858459"
+      :obtained :abstract
+      :retrieved-via :europe-pmc-rest
+      :read "Verbatim: \"Creep indentation tests were performed on five sites across a tibial plateau.\" And: \"These sites provided a representative range of aggregate moduli (0.48-1.58 MPa), Poisson's ratio (0.00-0.05) and permeability (1.7 x 10(- 15)-5.4 x 10(- 15) m(4)/N s) values found in human cartilage.\" Method, verbatim: \"Three biphasic material properties (aggregate modulus, Poisson's ratio and permeability) can be determined using an analytical or finite element model combined with optimisation to find the material properties values that best reproduce an experimental creep curve.\""
+      :caveat "THE 8.0e5 CARRIED HERE IS NOBODY'S MEASUREMENT. It sits inside 0.48-1.58 MPa and is unchanged from the uncited era, exactly as the ligament's 5.0e8 sits inside Neumann's 423-1095 MPa. The abstract gives a RANGE ACROSS FIVE SITES OF ONE PLATEAU and no mean, so there is no single number to adopt; picking a midpoint would invent one. A PMC identifier exists but the Europe PMC fullTextXML endpoint returns 404 for it, so the per-site table was not read."}]
+    :unobtained
+    [{:citation "Athanasiou KA, Rosenwasser MP, Buckwalter JA, Malinin TI, Mow VC. Interspecies comparisons of in situ intrinsic mechanical properties of distal femoral cartilage. J Orthop Res. 1991;9(3):330-340."
+      :doi "10.1002/jor.1100090304"
+      :pmid "2010837"
+      :could-not-obtain :numbers-not-in-abstract
+      :retrieved-via :europe-pmc-rest
+      :note "The abstract was read in full and is entirely qualitative on the quantities this entry carries. It is corroborating and directional: \"The aggregate modulus of the anterior patellar groove within each species is the lowest among all sites tested, and the permeability of the patellar groove cartilage is the highest and does not vary among species. Similarly, the Poison's ratio in the patellar groove is the lowest in all species\", and \"For any given location, no differences were found in the aggregate modulus among all the species\". That last clause is the one worth keeping: it says a bovine or canine number is not automatically wrong for human cartilage AT THE SAME SITE -- and that the site is what matters. NO NUMBER IN THIS ENTRY COMES FROM ATHANASIOU."}]}}
 
   {:name "Ligament"
    :tissue-type :ligament

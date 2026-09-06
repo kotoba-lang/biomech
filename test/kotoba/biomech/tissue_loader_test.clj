@@ -35,7 +35,10 @@
     (is (= 1.0e5  (E "Skin")))            (is (= 0.45 (nu "Skin")))            (is (= 1100 (d "Skin")))
     (is (= 3.0e3  (E "Liver")))           (is (= 0.45 (nu "Liver")))           (is (= 1060 (d "Liver")))
     (is (= 1.2e9  (E "Tendon")))          (is (= 0.40 (nu "Tendon")))          (is (= 1100 (d "Tendon")))
-    (is (= 8.0e5  (E "Cartilage")))       (is (= 0.40 (nu "Cartilage")))       (is (= 1100 (d "Cartilage")))
+    ;; CARTILAGE'S POISSON'S RATIO IS NO LONGER LEGACY. 0.40 cited nobody;
+    ;; Keenan 2009 measured 0.00-0.05 in human cartilage and 0.05 is the high
+    ;; end of that band. The modulus and density are still the legacy values.
+    (is (= 8.0e5  (E "Cartilage")))       (is (= 0.05 (nu "Cartilage")))       (is (= 1100 (d "Cartilage")))
     (is (= 5.0e5  (E "Arterial-Wall")))   (is (= 0.45 (nu "Arterial-Wall")))   (is (= 1060 (d "Arterial-Wall")))
     (is (= 3.0e3  (E "Brain")))           (is (= 0.45 (nu "Brain")))           (is (= 1040 (d "Brain")))
     (is (= 3.0e3  (E "Adipose-Tissue")))  (is (= 0.45 (nu "Adipose-Tissue")))  (is (= 950  (d "Adipose-Tissue")))
@@ -230,3 +233,49 @@
     (testing "and the regime that makes 1.2 GPa a floor rather than a ceiling"
       (is (re-find #"operates within the elastic 'toe' region"
                    (read-matching "Tendon" #"toe"))))))
+
+(deftest cartilage-aggregate-modulus-is-no-longer-a-youngs-modulus-test
+  ;; THE CORRECTION IS THE FIELD, NOT THE NUMBER. The entry's own :source text
+  ;; always said "aggregate modulus", and the value sat in :youngs-modulus,
+  ;; where kotoba.biomech.fem reads it and hands it to an isotropic solver as a
+  ;; Young's modulus. Nothing raised, because the two coincide to 0.53% at
+  ;; Keenan's measured Poisson's ratio -- which is why this went unnoticed and
+  ;; why a test on the VALUE alone could never have caught it.
+  (let [t (tissue-named "Cartilage")]
+    (is (= :biphasic (get-in t [:model :type]))
+        "the source fits a linear biphasic model, not a hyperelastic one")
+    (is (= 8.0e5 (tissue/aggregate-modulus t))
+        "H_A now has the field kotoba.biomech.tissue/aggregate-modulus names")
+    (is (double? (tissue/aggregate-modulus t)))
+    (is (= [4.8e5 1.58e6] (get-in t [:model :aggregate-modulus-range]))
+        "Keenan's five-site range, so the scalar can be seen sitting inside it")
+    (is (= :unsourced-but-bounded (tissue/scalar-provenance t))
+        "8.0e5 is inside 0.48-1.58 MPa and is nobody's measurement")))
+
+(deftest cartilage-poissons-ratio-was-corrected-downward-with-a-source-test
+  ;; 0.40 -> 0.05. The old value cited nobody; a near-zero Poisson's ratio is
+  ;; what a biphasic fit of cartilage reports. The consequence is not cosmetic:
+  ;; K = E/(3(1-2nu)) is 1.667E at 0.40 and 0.370E at 0.05, so the old value
+  ;; made the tissue 4.5x stiffer in bulk than the measurement.
+  (let [t (tissue-named "Cartilage")
+        K #(/ 1.0 (* 3.0 (- 1.0 (* 2.0 %))))]
+    (is (= 0.05 (tissue/poissons-ratio t)))
+    (is (= [0.0 0.05] (get-in t [:model :poissons-ratio-range])))
+    (is (true? (tissue/isotropically-admissible? t))
+        "0.05 is well inside -1 < nu < 1/2, so the fea bridge still accepts it")
+    (testing "the old value overstated the bulk modulus by 4.5x"
+      (is (< 4.4 (/ (K 0.40) (K 0.05)) 4.6)))
+    (testing "and the quotation carries every one of Keenan's three coefficients"
+      (is (re-find #"aggregate moduli \(0\.48-1\.58 MPa\), Poisson's ratio \(0\.00-0\.05\) and permeability"
+                   (read-matching "Cartilage" #"0\.48-1\.58"))))))
+
+(deftest cartilage-permeability-is-a-named-endpoint-not-a-midpoint-test
+  ;; Same convention the nucleus already uses for its |G*| band: take an
+  ;; endpoint the source printed and say which, rather than averaging two
+  ;; numbers into a third that appears nowhere.
+  (let [t (tissue-named "Cartilage")]
+    (is (= 1.7e-15 (tissue/permeability t)))
+    (is (double? (tissue/permeability t)))
+    (is (= [1.7e-15 5.4e-15] (get-in t [:model :permeability-range])))
+    (is (= (tissue/permeability t) (first (get-in t [:model :permeability-range])))
+        "the scalar must BE an endpoint of the range, not merely inside it")))

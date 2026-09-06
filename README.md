@@ -1,7 +1,5 @@
 # kotoba-biomech
 
-[![CI](https://github.com/kotoba-lang/biomech/actions/workflows/ci.yml/badge.svg)](https://github.com/kotoba-lang/biomech/actions/workflows/ci.yml)
-
 **Biomechanics simulation domain layer in pure Clojure.** 筋肉・骨・皮膚・
 内臓の生体力学的な sim を扱う [kotoba-lang](https://github.com/kotoba-lang)
 capability library.
@@ -14,13 +12,110 @@ No network, no I/O in any `.cljc` domain namespace (the one JVM-only loader,
 `kotoba.biomech.tissue-loader`, reads `resources/kami/biomech/tissues.edn` and
 is split out as a `.clj` exactly like kotoba-lang/fea's `material-loader`).
 
+## Boundary with `cloud-itonami/suji`
+
+Two repos in this workspace implement Hill-type muscle mechanics. **The
+distinction is resolution, and it is not a duplication to collapse.**
+
+| | `kotoba-lang/biomech` (here) | `cloud-itonami/suji` |
+|---|---|---|
+| Scale | tissue / single muscle-tendon unit | whole body |
+| Time | **dynamic** — semi-implicit Euler, sub-stepped | **static** — one posture, no time |
+| Muscle | a lumped 1-D mass-spring-damper with an active element; a muscle is a *body* with mass, length and velocity | one line of action; a muscle is a *moment arm and a force*, with no mass and no state |
+| Question it answers | how does this tissue move under load | what moments does this posture demand, which muscles carry them, and what disc compression results |
+| Also owns | continuum tissue properties, Euler–Bernoulli beams, FEM, XPBD soft body, LBM flow | posture solving, inverse dynamics, Crowninshield–Brand force sharing, ligaments, per-level disc compression |
+| Deps | three solver repos (fea, kami-vehicle, kami-engine-cfd) | stdlib only — it compiles into a browser bundle |
+
+Neither repo depends on the other, and the last row is why: biomech's three git
+dependencies are a cost suji will not pay for a three-line function, and suji's
+whole-body statics are not a thing biomech has a body to run.
+`suji.methods.muscle/force-length-factor` already says so in its own docstring.
+
+### What was actually measured, 2026-09-07
+
+Both `force-length-factor` implementations were loaded into **one JVM** and
+evaluated over the same normalized-length grid; biomech's passive element was
+measured by running `acceleration` with zero velocity and zero activation
+(`f_passive = -m·a`), not by transcribing the formula.
+
+**The active force–length curve is the same closed form**, `1 − 4(L/L₀ − 1)²`
+clamped at 0, to floating point. Over 17 grid points from 0.40 to 1.60 × optimal
+the **worst absolute difference is 6.7 × 10⁻¹⁶** — double rounding, because the
+two were evaluated at different absolute scales (0.15 m vs 0.10 m optimal).
+
+They diverge at the edges, deliberately on suji's side:
+
+| input | biomech | suji |
+|---|---|---|
+| `length` nil | throws `NullPointerException` | `1.0` |
+| `optimal` nil | throws `NullPointerException` | `1.0` |
+| `optimal` 0.0 | `0.0` (silently: "produces nothing") | `1.0` |
+
+suji falls back to the peak on purpose — a muscle whose length it cannot state
+must not be reported as infinitely strained. biomech has no such fallback.
+
+**The passive elements are different models and disagree by up to two orders of
+magnitude.** biomech uses a linear, *bidirectional* spring about rest length;
+suji uses a tension-only exponential above optimal length, normalised to 80% of
+peak active force at 1.5 × optimal. Expressed as a fraction of each model's own
+peak active force:
+
+| L/L₀ | biomech (N, Fmax 1000 N) | biomech / Fmax | suji (N, peak 2040 N) | suji / peak | suji : biomech |
+|---|---|---|---|---|---|
+| 0.70 | −9.00 | −0.0090 | 0.00 | 0.0000 | sign disagreement |
+| 0.90 | −3.00 | −0.0030 | 0.00 | 0.0000 | sign disagreement |
+| 1.00 | 0.00 | 0.0000 | 0.00 | 0.0000 | both zero |
+| 1.05 | 1.50 | 0.0015 | 7.18 | 0.0035 | 2.3× |
+| 1.10 | 3.00 | 0.0030 | 19.02 | 0.0093 | 3.1× |
+| 1.20 | 6.00 | 0.0060 | 70.73 | 0.0347 | 5.8× |
+| 1.25 | 7.50 | 0.0075 | 123.80 | 0.0607 | 8.1× |
+| 1.30 | 9.00 | 0.0090 | 211.30 | 0.1036 | 11.5× |
+| 1.40 | 12.00 | 0.0120 | 593.38 | 0.2909 | 24.2× |
+| **1.50** | **15.00** | **0.0150** | **1632.00** | **0.8000** | **53.3×** |
+| 1.60 | 18.00 | 0.0180 | 4455.26 | 2.1840 | 121.3× |
+
+Two things this table says that a single ratio would hide. Below optimal length
+the disagreement is not a magnitude but a **sign**: biomech's spring pushes back
+when compressed, suji's passive tissue is exactly slack. And at 1.60 suji reports
+**2.18 × its own peak active force** — it is extrapolating past 1.5, the stretch
+its exponential is calibrated at, exactly as its ligament code warns about for
+ligaments. Neither number is wrong for its model; they are answers to different
+questions, and averaging them would be meaningless.
+
+**Only biomech has**, and suji has no state to feed them: force–velocity
+(measured 1.00 isometric, 0.50 at half v-max shortening, 0.00 at v-max, 1.25 and
+1.50 for the capped eccentric branch), first-order activation dynamics (0.6321
+after one time constant), and a tension-only series-elastic tendon. **Only suji
+has**: posture solving, Crowninshield–Brand minimum-cubed-stress recruitment,
+ligaments with their own calibration ranges, and refusal of postures where a
+straight-line muscle passes through its joint.
+
+**This comparison is not automated.** Running it needs suji on the classpath, and
+adding that dependency would defeat the reason both repos independently chose not
+to have it. `force-length-grid-pinned-against-suji-test` in
+`test/kotoba/biomech/muscle_test.cljc` pins **biomech's half** of the grid above,
+so this repo cannot drift silently; it cannot notice suji changing, and that is
+stated rather than implied. To re-run the full comparison, put both `src`
+directories on one classpath and evaluate the two `force-length-factor`s and
+`passive-force-n` / `acceleration` over the grid.
+
+### One thing this measurement got wrong on the way in
+
+`default-params` claimed its passive stiffness was "tuned so a +30% stretch gives
+~40 N passive restoring force". Measured, it gives **9.0 N** — 200 N/m × 0.045 m.
+The prose was 4.4× the parameter sitting next to it and nothing tested the
+sentence. The docstring is corrected and
+`passive-spring-is-linear-and-bidirectional-test` now pins 9.0 N; the parameter
+is untouched, because retuning `k` to rescue a comment would have changed every
+passive number in this repo.
+
 ## Maturity
 
 | | |
 |---|---|
 | Role | capability |
 | Phase | 1 + 2 — tissue domain + closed-form sim + 3 solver backends |
-| Tests | 36 tests, 102 assertions across 7 namespaces, all green |
+| Tests | 38 tests, 123 assertions across 7 namespaces, all green (measured 2026-09-07, `clojure -X:test`, exit 0) |
 | Lint | 0 errors / 0 warnings (`clojure -M:lint --fail-level error`) |
 | Backends | fea (beam2 FEM) · kami-vehicle (mass-spring primitives) · kami-engine-cfd (LBM CFD) |
 
@@ -129,6 +224,14 @@ not rendering.
 clojure -X:test
 clojure -M:lint
 ```
+
+CI here is the **murakumo fleet**, not GitHub Actions (ADR-2607300900). Measured
+2026-09-07, `GET /repos/kotoba-lang/biomech/actions/permissions` returned
+`{"enabled": false}` — Actions is switched off for this repo, so the CI badge
+this README used to carry could never have gone green. The badge and the inert
+`.github/workflows/ci.yml` are removed. **Nothing replaced them: no fleet-ci gate
+has been landed for this repo yet.** The commands above are what actually runs
+the suite, by hand, today.
 
 ## License
 

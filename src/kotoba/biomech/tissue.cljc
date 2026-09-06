@@ -87,6 +87,62 @@
   literature reports compression this way."
   [t] (get-in t [:model :aggregate-modulus]))
 
+(defn swelling-stress
+  "The tissue's stress at its zero-strain (free-swollen) reference state, in
+  PASCALS, or nil.
+
+  WHAT IT IS. A confined-compression equilibrium law is not sigma = H_A * eps.
+  It is sigma = sigma_swelling + H_A * eps, because a proteoglycan-rich tissue
+  sitting in fluid at zero applied strain is ALREADY carrying a stress: its
+  osmotic swelling pressure, held by the confining wall. A caller who omits
+  this term attributes the whole applied stress to matrix deformation and
+  overstates the strain by sigma_swelling / H_A.
+
+  ONE FIELD, TWO AUTHORS' NAMES, AND THAT IS A JUDGEMENT MADE HERE. Iatridis
+  1998 calls it the `reference stress offset, sigma(offset)` (0.13 +/- 0.06 MPa
+  normal anulus); Johannessen & Elliott 2005 call it the `swelling stress`
+  (Psw = 0.138 +/- 0.029 MPa nondegenerate nucleus). They are the same term of
+  the same constitutive law, measured the same way -- confined compression from
+  a free-swollen reference -- and Iatridis himself reads his own offset as
+  swelling pressure, verbatim: `The significant effects of degeneration
+  reported in this study suggested a shift in load carriage from fluid
+  pressurization and swelling pressure to deformation of the solid matrix`.
+  Carrying two field names would force every reader to try both; carrying one
+  makes the equivalence a stated claim that this docstring can be argued with."
+  [t] (get-in t [:model :swelling-stress]))
+
+(defn permeability
+  "Hydraulic permeability k [m^4/(N*s)], or nil.
+
+  The second of the two numbers a biphasic tissue needs. H_A alone says where
+  the tissue ENDS UP; H_A and k together say HOW LONG it takes to get there,
+  because the biphasic momentum balance with Darcy drag is a diffusion equation
+  whose diffusivity is the product H_A * k -- which carries units of m^2/s and
+  nothing else in the theory does. See kotoba.biomech.disc."
+  [t] (get-in t [:model :permeability]))
+
+(defn nonlinear-stiffening-coefficient
+  "Strain-stiffening coefficient beta of a nonlinear biphasic fit, or nil.
+
+  NIL IS INFORMATIVE AND IS NOT THE SAME AS ZERO. nil means no source read for
+  this tissue fitted a nonlinear law at all -- Johannessen & Elliott 2005 state
+  they used `Linear biphasic theory`, so the nucleus carries none. A tissue that
+  carries one (the anulus, beta = 2.13 +/- 1.48, Iatridis 1998) is a tissue
+  whose literature says a linear reading degrades with strain AND by how much.
+  A consumer that cannot tell those two situations apart cannot say whether its
+  linear answer is unvalidated or merely uncorrected."
+  [t] (get-in t [:model :nonlinear-stiffening-coefficient]))
+
+(defn permeability-strain-coefficient
+  "Strain-dependence coefficient M of a permeability law k = k0 * exp(M * e),
+  or nil.
+
+  Same reading as the coefficient above: nil means no read source fitted one.
+  Mow 1980 already flagged this, verbatim: `We concluded that the large spread
+  in the permeability coefficients is due to the assumption of a constant
+  deformation independent permeability.`"
+  [t] (get-in t [:model :permeability-strain-coefficient]))
+
 (defn directional
   "The tissue's direction-resolved properties map, or nil.
 

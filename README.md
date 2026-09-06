@@ -378,9 +378,11 @@ it:
 | linear axial strain | **0.821** |
 | height loss on a 10 mm disc | **8.21 mm** |
 
-8.2 mm of height loss on a 10 mm disc, from sitting still on a stool; real
-diurnal height loss is about a millimetre over a whole day. The nucleus is
-stiffer (1.01 MPa) and still gives 45.5%. Both return
+8.2 mm of height loss on a 10 mm disc, from sitting still on a stool. Botsford
+1994 measured the diurnal loss in vivo and it is 16.2% of disc **volume** (mean,
+lower three lumbar) and 18.7–21.6% per level — and height strain is smaller than
+volume fraction, because AP diameter falls as well. The nucleus is stiffer
+(1.01 MPa) and still gives 45.5%. Both return
 `:refused :beyond-linear-range` with the height loss **withheld, not clamped** —
 a clamped number at the limit would get used.
 
@@ -391,6 +393,148 @@ the in-vivo load path is swelling, not matrix deformation. The 5% default limit
 is labelled in its own docstring as **a convention of this namespace**, not a
 number from Iatridis — the source gives the direction of the argument, not a
 cut-off.
+
+### Settling that refusal: which explanation the literature supports
+
+The refusal above was right and did not say *why*. Three explanations were open,
+and none of them had been measured here:
+
+1. **`H_A` is an equilibrium modulus.** It says where the tissue ends up after
+   the fluid has left, not where it is minutes after a load lands. A single
+   modulus cannot carry a time scale.
+2. **The load is carried by swelling, not by the matrix.** Johannessen &
+   Elliott's own conclusion.
+3. **The measured quantity is not a stress on the solid phase at all**, so
+   feeding it to a solid modulus is a category error — in which case the answer
+   is a differently shaped model, not a better number.
+
+(1) and (2) are now implemented in full, with every constant read from a source,
+**because they are the two that can be measured and disposed of**. Measuring
+them disposes of them. Four readings of the same 0.46 MPa, judged against
+Botsford's in-vivo numbers:
+
+| reading | nucleus strain | verdict |
+|---|---|---|
+| `σ / H_A` — the refusal above | 0.455 | refuted, and by a lot |
+| `(σ − P_sw) / H_A` — **(2) removed** | 0.319 | still ~1.5× the largest measured per-level loss, 2× the mean |
+| time-dependent, `t` = 16 h — **(1) removed too** | 0.317 | *it barely moves* |
+| `((σ / index) − P_sw) / H_A` — **(3) removed** | 0.131 – 0.167 | inside the measured band, or under it |
+
+**Time is real and it is not the explanation.** The nucleus poroelastic time
+constant works out at 7.6 h, so sixteen hours of sitting is 2.1 time constants
+and the disc is 99.5% of the way to equilibrium — there is no more time left to
+spend. At `t = ∞`, where `H_A` is *exactly* the right modulus and no clock is
+involved, the prediction is still 32%.
+
+What closes the gap is the third reading, and the third reading is the one that
+stops treating a hydrostatic pressure read **in the nucleus** as a stress on a
+specimen. Wilke's Methods say what the transducer was in, verbatim: *"a pressure
+transducer with a diameter of 1.5 mm was implanted in the nucleus pulposus of a
+nondegenerated L4–L5 disc"*. Nachemson measured the quotient between that
+pressure and the mean stress on the whole disc and called it the pressure index;
+Table 5 gives 1.5–1.7 for normal lumbar discs. Dividing by it is the whole of
+the remaining overshoot.
+
+So the module now carries the time path **and still refuses**, because 16.7% is
+not inside a linear reading of `H_A0` either, and a number that has stopped
+being absurd has not thereby become defensible. What changed is that the refusal
+now **names what it is missing** — `:missing` is a vector of keywords, and its
+first entry is `:effective-stress-on-solid-phase` — and the note points at
+`nucleus-pressure->disc-mean-stress`, which takes the index as a **required
+argument** so nobody gets it silently.
+
+#### The one thing this earned
+
+A time constant is not free to assert. `τ = h²/(H_A·k)` is built here from two
+confined-compression material constants (Johannessen & Elliott's `H_A,eff` =
+1.01 MPa and `ka` = 0.9 × 10⁻¹⁵ m⁴/N·s) and one geometric assumption. van der
+Veen 2013 fitted creep time constants to **whole human discs** — a different
+experiment on a different preparation — and got **3.6–17 h**. The derived value,
+7.6 h, falls inside that band.
+
+Read for what it is: van der Veen fitted the *same* discs over six test
+durations and got six answers, which is the authors telling you the quantity is
+protocol-dependent (*"The 24h experiment was still too short for an accurate
+determination of the parameters"*). Landing inside it clears a real external bar
+and is not a validation to a figure. The anulus, on its own `k0`, gives **62 h**
+— outside the band, and reported rather than hidden. And the drainage path is
+the most leveraged assumption in the whole calculation (`τ` goes as its square),
+so it is its own named function: MacLean 2007 measured that *"differences in
+endplate permeability conditions had a significant effect on viscoelastic
+behaviors"*, which means treating the endplate as a free surface is known to be
+wrong in the direction of a `τ` that is too **short**.
+
+#### What was read, and what was not
+
+| source | for | obtained |
+|---|---|---|
+| Wilke 1999, *Spine* 24(8):755–762, PMID 10222525 | the 0.46 MPa, **and that the transducer was in the nucleus pulposus** | `:abstract` (Europe PMC REST) |
+| Iatridis 1998, *J Biomech* 31(6):535–544, PMID 9755038 | H_A0 0.56, β 2.13, σ_offset 0.13 MPa, k0 0.20e−15, M 1.18; and the load-carriage sentence | `:abstract` (Europe PMC REST) |
+| Johannessen & Elliott 2005, *Spine* 30(24):E724–9, PMID 16371889 | H_A,eff 1.01, P_sw 0.138 MPa, ka 0.9e−15; and *"Linear biphasic theory was used"* | `:abstract` (Europe PMC REST) |
+| Mow, Kuei, Lai & Armstrong 1980, *J Biomech Eng* 102(1):73–84, PMID 7382457 | the biphasic theory, and its authors' own warning about constant permeability | `:abstract` (**Crossref** — see below) |
+| Yuan et al. 2018, *Sci Rep* 8:5043, PMC5864912 | `t_g = a²/(k·C₁₁)`, the gel diffusion time, verbatim | `:full-text` (Europe PMC REST XML, CC BY) |
+| van der Veen 2013, *J Biomech* 46(12):2101–2103, PMID 23796401 | measured whole-disc creep time constant, 3.6–17 h | `:abstract` (Europe PMC REST) |
+| Botsford 1994, *Spine* 19(8):935–940, PMID 8009352 | measured diurnal disc volume loss, 16.2% / 18.7–21.6% | `:abstract` (Europe PMC REST) |
+| MacLean 2007, *J Biomech* 40(1):55–63, PMID 16427060 | that endplate permeability changes the viscoelastic behaviour | `:abstract` (Europe PMC REST) |
+| Nachemson 1960, *Acta Orthop Scand* XXVIII:269–289 | the pressure index; Table 1's worked arithmetic and Table 5's values | `:full-text` (scanned PDF, text extracted) |
+| Tyrrell 1985, *Spine* 10(2):161–164, PMID 4002039 | circadian stature variation, 19.3 mm mean | `:abstract`, **read but not used** — whole-body stature over 23 discs is not a per-disc height strain |
+| Nachemson 1966, *Clin Orthop* 45:107–122, PMID 5937361 | — | **`:could-not-obtain`** — no abstract in Europe PMC and no full text reached. Nothing here comes from it |
+| Adams & Hutton 1983, PMID 6685921; Adams et al. 1990, PMID 2138156 | corroborating, **non-numeric** on the quantities here | `:abstract`, not used for any number |
+
+Two retrieval notes, because they cost time. **PubMed HTML serves a cookie page
+and Europe PMC article pages are JS-rendered** — both return something that
+looks like a document and contains no abstract; the Europe PMC **REST** endpoint
+(`/webservices/rest/search?query=EXT_ID:<pmid>&resultType=core&format=json`)
+works. And when Europe PMC holds no abstract at all, as for Mow 1980, the
+**Crossref work record** carries the publisher's own `<jats:abstract>` deposit
+— that is where the Mow quotations here come from, and it is marked `:via
+:crossref` in the code so the route is visible.
+
+### What this means for `cloud-itonami/suji`'s MPa figures
+
+Read from `cloud-itonami/suji` at `main` on 2026-09-07, not run.
+
+**The good news first: suji already knows the main point of this section.** Its
+`spine/nachemson-pressure-index` carries the same Table 5 values from the same
+paper, read in full text, and its docstring opens *"A PRESSURE IS NOT A FORCE."*
+Its `:stress-mpa` is `force ÷ disc-area`, which is `P / A_d` — a **mean stress
+on the whole disc**, the denominator of Nachemson's index, not the nucleus
+pressure in its numerator. **Nothing here overturns suji's cross-check**, which
+already routes through the index. Four consequences follow, all in a stated
+direction:
+
+1. **`:stress-mpa` and a Wilke MPa are not the same quantity, and a suji figure
+   that *equals* a Wilke figure at the same posture is off by the index rather
+   than agreeing with it.** At a posture where Wilke reads 0.46 MPa in the
+   nucleus, the disc mean stress is 0.27–0.31 MPa. A suji level that lands on
+   0.46 needs explaining, not celebrating.
+2. **`:stress-mpa` is a total stress on a biphasic tissue, not a stress on the
+   solid matrix**, and the two are furthest apart exactly where suji operates:
+   in a normal, hydrated disc. Iatridis 1998 puts it as a property of
+   degeneration, verbatim — degeneration *"suggested a shift in load carriage
+   from fluid pressurization and swelling pressure to deformation of the solid
+   matrix"*. The healthier the disc, the less of `:stress-mpa` the matrix is
+   feeling. So `:stress-mpa` should not be converted to a deformation, a strain,
+   or a height change without the biphasic path, and this repo's
+   `disc/axial-creep` will refuse to do it for you.
+3. **There is a floor below which the tissue feels nothing at all.** The
+   confined-compression law is `σ = σ_swelling + H_A·ε`, and σ_swelling is
+   0.13 MPa (anulus) / 0.138 MPa (nucleus). Any level whose `:stress-mpa` is
+   below about 0.14 predicts **no matrix compression whatever** — the tissue
+   takes fluid up instead. suji reports eleven levels including cervical ones
+   with small areas *and* small forces; whichever of them sit under that floor
+   are levels where a compression figure is real but a deformation figure would
+   be meaningless. `axial-creep` returns `:refused :below-swelling-stress`
+   there rather than a negative height loss. (Wilke's own overnight observation
+   is the same phenomenon from the other side: *"During the night, pressure
+   increased from 0.1 to 0.24 MPa."*)
+4. **A static `:stress-mpa` is not a height change, because the disc has a
+   clock.** 7.6 h for the nucleus. A posture held for a minute and the same
+   posture held for a working day produce the same `:stress-mpa` and very
+   different discs.
+
+None of this asks suji to change a number. It says what its number is, and what
+it is not.
 
 ### Two things this work got wrong on the way in
 
@@ -425,6 +569,23 @@ straight at it. Two dedicated mutations — reading the `:youngs-modulus` key, a
 returning `nil` — showed it does discriminate when the mutation reaches it. A
 test that does not fail when the thing it is named for is broken has proved
 nothing, and it is only findable by breaking it on purpose.
+
+**The time-path round: 16 new tests, 18 mutations, none sailed through.** Each
+was applied alone and each file restored and verified byte-identical by
+`sha256`. The one worth naming is `M08`: `missing-quantities` has a `cond->`
+whose third clause reads `permeability-strain-coefficient`, and swapping it to
+read `nonlinear-stiffening-coefficient` instead is invisible to both real
+tissues — the anulus carries **both** coefficients and the nucleus carries
+**neither**, so either one alone would pass a mutation aimed straight at it.
+That is the same shape as the `or` above. Two single-purpose fixtures, `beta-only`
+and `m-only`, exist for no other reason than to reach that clause, and they are
+what fails. A branch no fixture can distinguish is a branch no test is testing.
+
+**And one assertion this round got wrong before the tests caught it.** The first
+draft of `the-category-error-is-the-size-of-nachemsons-index-test` asserted that
+the index-corrected strain lands *at or below* Botsford's 16.2% mean. It is
+0.167 — above the mean, below the 18.7–21.6% per-level figures. Inside the band,
+not under it. The claim in the table above says so, because the test made it.
 
 ## Maturity
 
@@ -461,12 +622,17 @@ actually read.
 
 ### Intervertebral disc — `kotoba.biomech.disc`
 
-Axial compression of a disc: stress -> strain -> height loss, with a boundary on
-where the linear reading holds. Settled with sources below.
+Two paths. `axial-compression` is one modulus and no clock: stress → strain →
+height loss, with a boundary on where the linear reading holds. `axial-creep` is
+the biphasic path: a step load held for a time, through a poroelastic time
+constant built from the tissue's own permeability, with the swelling stress
+subtracted. Both refuse where they must, and the creep path's refusal **names
+what it is missing**.
 
 ```clojure
 (require '[kotoba.biomech.disc :as disc])
 (def af (tissue/find-tissue (loader/presets) "Annulus-Fibrosus"))
+(def np (tissue/find-tissue (loader/presets) "Nucleus-Pulposus"))
 
 ;; inside the linear range, it answers
 (:height-loss-mm (disc/axial-compression af (disc/stress-mpa->pa 0.020) 0.010))
@@ -476,6 +642,25 @@ where the linear reading holds. Settled with sources below.
 (let [r (disc/axial-compression af (disc/stress-mpa->pa 0.46) 0.010)]
   [(:strain r) (:refused r) (:height-loss-mm r)])
 ;=> [0.8214285714285714 :beyond-linear-range nil]
+
+;; the time path. tau is derived, not asserted; 7.6 h is inside the 3.6-17 h
+;; band van der Veen 2013 measured on whole human discs.
+(let [r (disc/axial-creep np (disc/stress-mpa->pa 0.46) 0.010 (* 16 3600))]
+  [(:time-constant-h r) (:equilibrium-strain r) (:refused r) (:missing r)])
+;=> [7.639652854174306
+;    0.3188118811881188
+;    :equilibrium-strain-beyond-linear-range
+;    [:effective-stress-on-solid-phase
+;     :nonlinear-stiffening-never-measured
+;     :strain-dependent-permeability-never-measured]]
+
+;; and the conversion the refusal points at -- index REQUIRED, never defaulted
+(disc/nucleus-pressure->disc-mean-stress (disc/stress-mpa->pa 0.46) 1.5)
+;=> 306666.6666666667
+
+;; below the tissue's own swelling stress it will not run the law backwards
+(:refused (disc/axial-creep np (disc/stress-mpa->pa 0.1) 0.010 (* 7 3600)))
+;=> :below-swelling-stress
 ```
 
 ### Bone closed-form mechanics — `kotoba.biomech.osteo`

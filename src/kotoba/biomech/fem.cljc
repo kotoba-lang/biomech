@@ -23,6 +23,27 @@
   linear-elastic using their effective youngs-modulus — a modelling
   simplification (fea Phase-1 is linear-static only)."
   [t]
+  ;; REFUSE AN ANISOTROPIC POISSON'S RATIO RATHER THAN SOLVING WITH IT.
+  ;; fea's :linear-elastic material is isotropic, and isotropy requires
+  ;; -1 < nu < 1/2. A tissue measured anisotropically may exceed that bound
+  ;; legitimately (the anulus fibrosus does, at nu21 = 0.67), and passing it
+  ;; through produces a NEGATIVE bulk modulus, K = E/(3(1-2nu)) with
+  ;; 1-2nu < 0. Nothing downstream raises: the solve returns finite numbers
+  ;; that mean nothing. Every tissue in the shipped presets that HAS a
+  ;; Poisson's ratio below 1/2 is unaffected; nil still takes the historical
+  ;; 0.3 default, because changing that would alter existing behaviour for
+  ;; tissues this guard has nothing to say about.
+  (let [nu (tissue/poissons-ratio t)]
+    (when (and (some? nu) (not (tissue/isotropically-admissible? t)))
+      (throw (ex-info
+              (str "tissue " (pr-str (:name t)) " has Poisson's ratio " nu
+                   ", outside the isotropic range -1 < nu < 1/2; fea's"
+                   " linear-elastic material is isotropic and would compute a"
+                   " negative bulk modulus. Use an anisotropic path or an"
+                   " explicitly chosen isotropic surrogate.")
+              {:type :anisotropic-tissue-in-isotropic-solver
+               :tissue (:name t)
+               :poissons-ratio nu}))))
   {:name (str (or (:name t) "tissue"))
    :model {:type :linear-elastic
            :youngs-modulus (double (or (tissue/youngs-modulus t) 1.0e6))

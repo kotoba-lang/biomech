@@ -1,5 +1,5 @@
 (ns kotoba.biomech.fem-test
-  (:require [clojure.test :refer [deftest is]]
+  (:require [clojure.test :refer [deftest is testing]]
             [kotoba.biomech.fem :as fem]))
 
 (def cortical
@@ -54,3 +54,40 @@
         d1 (:max-displacement (fem/solve-tet4-cube (mk 1.0e10) 0.01 10.0))
         d2 (:max-displacement (fem/solve-tet4-cube (mk 2.0e10) 0.01 10.0))]
     (is (< d2 d1))))
+
+(def annulus
+  "The shipped Annulus-Fibrosus entry's shape. nu21 = 0.67 is a real measurement
+  (Elliott & Setton 2001) and is legitimate for an ANISOTROPIC tissue."
+  {:name "Annulus-Fibrosus"
+   :tissue-type :disc
+   :model {:type :anisotropic-linear-elastic
+           :youngs-modulus 8.0e5 :poissons-ratio 0.67 :aggregate-modulus 5.6e5}})
+
+(deftest anisotropic-poissons-ratio-is-refused-by-the-isotropic-bridge-test
+  ;; fea's :linear-elastic material is ISOTROPIC, and isotropy requires
+  ;; -1 < nu < 1/2. At nu = 0.67 the bulk modulus K = E/(3(1-2nu)) has
+  ;; 1-2nu = -0.34, so K is negative: a material that expands when squeezed.
+  ;; Nothing downstream raises -- the solve returns finite, meaningless numbers.
+  ;; This bridge is the only place the condition can be caught.
+  (let [e (try (fem/tissue->fea-material annulus)
+               nil
+               (catch #?(:clj Exception :cljs :default) e e))]
+    (is (some? e) "an anisotropic Poisson's ratio must not reach the isotropic solver")
+    (is (= :anisotropic-tissue-in-isotropic-solver (:type (ex-data e)))
+        "and it must be refused for THAT reason, not some other failure")
+    (is (= 0.67 (:poissons-ratio (ex-data e))))
+    (is (= "Annulus-Fibrosus" (:tissue (ex-data e))))))
+
+(deftest isotropic-tissues-are-unaffected-by-the-guard-test
+  ;; Every shipped tissue that HAS a Poisson's ratio is below 1/2, so the guard
+  ;; changes nothing for anything that worked before.
+  (testing "an ordinary tissue still bridges"
+    (is (= 0.30 (get-in (fem/tissue->fea-material cortical) [:model :poissons-ratio]))))
+  (testing "a tissue with NO Poisson's ratio keeps the historical 0.3 default"
+    ;; Deliberately NOT guarded: changing the nil path would alter existing
+    ;; behaviour for tissues this guard has nothing to say about.
+    (let [mat (fem/tissue->fea-material
+               {:name "Nucleus-Pulposus" :tissue-type :disc
+                :model {:type :biphasic :youngs-modulus nil :poissons-ratio nil}})]
+      (is (= 0.3 (get-in mat [:model :poissons-ratio])))
+      (is (= 1.0e6 (get-in mat [:model :youngs-modulus]))))))

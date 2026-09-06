@@ -247,13 +247,192 @@ the sourcing is unanimous that passive muscle is tension-only, and suji is a
 static whole-body model with no tendon-free integration to bound, so it has none
 of the reason biomech has for keeping one.
 
+## Which tissues are sourced, and which are only plausible
+
+Settled 2026-09-07. **The count was never the problem.** This repo already
+carried eleven tissues before this work, and **every one of them cited nobody** —
+each `:source` reads `representative; ...` with no author, no year and no DOI.
+Adding more of those would have made the table longer and the repo no more
+truthful. Measured 2026-09-07 after this change: **3 of 13 entries carry a
+citation, 10 do not.**
+
+| tissue | provenance |
+|---|---|
+| **Annulus fibrosus** | Elliott & Setton 2001 + Iatridis 1998 — **new** |
+| **Nucleus pulposus** | Iatridis 1997 + Johannessen & Elliott 2005 — **new** |
+| **Ligament** | Neumann 1992 — **value unchanged, citation added** |
+| cortical / cancellous bone, skeletal muscle, skin, liver, tendon, cartilage, arterial wall, brain, adipose | `representative; ...`, **uncited**. Not touched here, and not to be read as verified. |
+
+### Why the disc, and not something from an anatomy list
+
+From a consumer, not from anatomy. `cloud-itonami/suji` computes a per-level
+spinal compressive force, divides it by a disc area to report `:stress-mpa`, and
+cross-checks that against Wilke 1999's in-vivo intradiscal pressure. So it
+already reasons about this tissue — and has a **stress with no modulus**, so it
+cannot say how far anything deforms. It also carries Nachemson's pressure index,
+whose entire content is that *the pressure in the nucleus is not the pressure on
+the disc*. That is a material distinction, so this is **two entries and not one
+averaged "disc"**.
+
+Ligament earned its place differently: suji clamps ligament force at a
+`:ref-stretch` with no modulus behind it, and biomech's ligament entry had a
+number with no source. One of those two gaps could be closed by reading.
+
+### What was read
+
+Every number came from an **abstract**, retrieved through the Europe PMC REST
+API — PubMed's HTML serves a cookie-consent page, and Europe PMC's article pages
+are JavaScript-rendered, so both return something that looks like a document and
+contains no abstract. The entries say `:obtained :abstract`, not `:full-text`.
+The region- and level-resolved tables in the full texts were **not** read.
+
+| source | what it gave |
+|---|---|
+| **Elliott & Setton 2001** — *J Biomech Eng* **123**(3):256–263, DOI [10.1115/1.1374202](https://doi.org/10.1115/1.1374202) | Verbatim: "significant inhomogeneity in the linear-region circumferential tensile modulus (17.4+/-14.3 MPa versus 5.6+/-4.7 MPa, outer versus inner sites) and the Poisson's ratio v21 (0.67+/-0.22 versus 1.6+/-0.7, outer versus inner), but not in the axial modulus (0.8+/-0.9 MPa) or the Poisson's ratios V12 (1.8+/-1.4) or v13 (0.6+/-0.7)." |
+| **Iatridis et al. 1998** — *J Biomech* **31**(6):535–544, DOI [10.1016/S0021-9290(98)00046-3](https://doi.org/10.1016/S0021-9290(98)00046-3) | Confined compression. H_A0 **0.56 ± 0.21 MPa** normal, 1.10 ± 0.53 degenerate; stiffening coefficient β 2.13 ± 1.48 normal. And verbatim: "Significant effects of degeneration **but not orientation**". |
+| **Iatridis et al. 1997** — *J Biomech* **30**(10):1005–1013, DOI [10.1016/S0021-9290(97)00069-9](https://doi.org/10.1016/S0021-9290(97)00069-9) | Verbatim: "the shear stress of the nucleus pulposus relaxed nearly to zero indicative of the fluid nature of the tissue", and dynamically "dynamic modulus (magnitude of G*) ranging from **7 to 20 kPa** and loss angle (delta) ranging from 23 to 30 degrees over the range of angular frequencies tested (**1-100 rad s-1**)". |
+| **Johannessen & Elliott 2005** — *Spine* **30**(24):E724–E729, DOI [10.1097/01.brs.0000192236.92867.15](https://doi.org/10.1097/01.brs.0000192236.92867.15) | H_A,eff **1.01 ± 0.43 MPa** nondegenerate; swelling stress 0.138 ± 0.029 MPa. Conclusion verbatim: "**Swelling is the primary load-bearing mechanism**". |
+| **Neumann et al. 1992** — *J Biomech* **25**(10):1185–1194, DOI [10.1016/0021-9290(92)90074-B](https://doi.org/10.1016/0021-9290(92)90074-B) | Verbatim: "The average tensile strength, the 'overall' tensile modulus and the 'overall' strain of the ALL at failure were 27.4 MPa (S.D. 5.9), **759 MPa (S.D. 336)** and 4.95% (S.D. 1.51), respectively." At 2.5 mm/s, "approximately 1.0% strain per second". |
+
+### What was refused
+
+**A tissue that cannot be sourced is recorded as absent with the reason.** These
+are in `:provenance :unobtained`, and `sources-sought-and-not-obtained-are-recorded-test`
+pins that they stay there.
+
+- **Pintar et al. 1992** (*J Biomech* **25**(11):1351–1356, DOI
+  [10.1016/0021-9290(92)90290-H](https://doi.org/10.1016/0021-9290(92)90290-H)) —
+  `:could-not-obtain :numbers-not-in-abstract`. This is *the* source that would
+  settle the per-ligament moduli. Its abstract confirms six lumbar ligaments, 38
+  cadavers, 132 samples and "A total of 18 data curves are presented" — and
+  publishes **no numeric modulus**. So ligamentum flavum, interspinous and
+  supraspinous are **not carried**. That is precisely the gap suji has: its
+  `posterior_lumbar_ligaments` bundles exactly those three.
+- **Ebara et al. 1996** (*Spine* **21**(4):452–461) — abstract read **in full**
+  and it is directional but **non-numeric**: "The anterior anulus fibrosus had
+  larger values for tensile moduli and failure stresses than the posterolateral
+  anulus. Also, the outer regions … had greater moduli". Recorded as independent
+  agreement with Elliott's outer > inner ordering. **No number in any entry comes
+  from Ebara.**
+- **Density**, for both disc entries. No read source, so no field.
+- **A Young's modulus and a Poisson's ratio for the nucleus**, deliberately.
+  Iatridis measured its shear stress relaxing *nearly to zero*. `E = 2G(1+ν)`
+  would manufacture a modulus for a tissue the source says is not a solid.
+  `nucleus-carries-no-youngs-modulus-deliberately-test` pins the absence so
+  nobody "completes" the entry later.
+- **Articular cartilage, aponeurosis/fascia and nerve** were candidates and were
+  not attempted. No consumer in this family calls them today, and three sourced
+  tissues were worth more than six more `representative; ...` strings.
+
+### Anisotropy is stated, not averaged
+
+The annulus is the case that makes a single modulus indefensible — and the case
+that shows *when* one is fine.
+
+| | circumferential (outer) | axial | ratio |
+|---|---|---|---|
+| **tension** (Elliott 2001) | 17.4 ± 14.3 MPa | 0.8 ± 0.9 MPa | **21.75×** |
+| **confined compression** (Iatridis 1998) | \<no orientation effect detected\> | H_A0 0.56 ± 0.21 MPa | — |
+
+Two things follow that a single averaged number would destroy.
+
+**The same tissue is ~22× anisotropic in tension and not measurably anisotropic
+in compression.** Iatridis tested axial and radial specimens and found
+"significant effects of degeneration but not orientation". So one number is
+defensible for one loading mode and indefensible for the other, in one tissue.
+
+**The scalar `:youngs-modulus` is the axial direction, and the entry says so.**
+It is *not* a mean of the three — a mean would be a value measured nowhere. It
+is also the **least certain** of them: 0.8 ± 0.9 MPa has a standard deviation
+larger than its mean. That is written into the entry rather than smoothed away,
+and `annulus-scalar-is-the-axial-direction-not-an-average-test` pins it.
+
+**ν = 0.67 exceeds the isotropic bound of ½, and that is not an error.** The ½
+bound follows from *isotropy*; an anisotropic tissue may legitimately exceed it,
+and this one does (ν12 = 1.8 ± 1.4 at inner sites). But `kotoba.biomech.fem`
+passes `:poissons-ratio` straight into fea's **isotropic** linear-elastic
+material, where K = E/(3(1−2ν)) with 1−2ν = −0.34 is a **negative bulk modulus** —
+a material that expands when squeezed. Nothing raises; the solve returns finite,
+meaningless numbers. So `tissue/isotropically-admissible?` exists and the bridge
+refuses. Every shipped tissue that has a Poisson's ratio is below ½, so nothing
+that worked before changed.
+
+Rate is stated too, because these tissues are rate-dependent: both annulus
+studies are slow quasi-static equilibrium protocols, the ligament number is at
+~1.0% strain/s, and the nucleus shear modulus is meaningless without its
+frequency band — which is why the entry carries `[1.0 100.0]` rad/s next to it,
+and takes the **low end** of 7–20 kPa rather than a midpoint. The abstract does
+not say which endpoint belongs to which frequency, so the entry does not claim
+one.
+
+### The refusal that makes the entries do work
+
+See `kotoba.biomech.disc`. Composing this repo's tissue data with suji's output
+naively gives an impossible answer, and the library says so instead of returning
+it:
+
+| | |
+|---|---|
+| Wilke 1999 relaxed-sitting L4/L5 pressure | 0.46 MPa |
+| annulus H_A0 (Iatridis 1998, normal) | 0.56 MPa |
+| linear axial strain | **0.821** |
+| height loss on a 10 mm disc | **8.21 mm** |
+
+8.2 mm of height loss on a 10 mm disc, from sitting still on a stool; real
+diurnal height loss is about a millimetre over a whole day. The nucleus is
+stiffer (1.01 MPa) and still gives 45.5%. Both return
+`:refused :beyond-linear-range` with the height loss **withheld, not clamped** —
+a clamped number at the limit would get used.
+
+The reasons are in the sources, not in hindsight: H_A0 is the zero-strain
+tangent of a model whose own stiffening coefficient is β = 2.13 ± 1.48, so a
+linear reading **overstates** deformation; and Johannessen's conclusion is that
+the in-vivo load path is swelling, not matrix deformation. The 5% default limit
+is labelled in its own docstring as **a convention of this namespace**, not a
+number from Iatridis — the source gives the direction of the argument, not a
+cut-off.
+
+### Two things this work got wrong on the way in
+
+**A search summary said Neumann's ALL modulus was 27.4 MPa.** Reading the
+abstract, 27.4 MPa is the tensile **strength**; the modulus is **759 MPa** — 28×
+out, and the wrong physical quantity. Trusting it would also have flipped the
+verdict on the existing entry: 5.0e8 Pa looks absurd against 27.4 MPa and is in
+fact comfortably inside 759 ± 336. **The existing value is unchanged** — it was
+right, and merely unsourced.
+
+**The first draft of these entries used `(str "…" "…")` to wrap long strings**,
+an idiom copied from Clojure *source* into an EDN *data* file. Nothing evaluates
+`str` in EDN. `edn/read-string` **did not throw** — it returned all thirteen
+tissues and looked clean, while the field held a `PersistentList` instead of a
+string. Same signature as the heredoc `\"` class this workspace already
+documents (parse succeeds, value silently wrong) by a different mechanism.
+Parsing is not validation; the **type** is.
+`no-tissue-field-is-an-unevaluated-form-test` walks every entry and fails on any
+list or bare symbol.
+
+### One test that discriminated nothing
+
+Every one of the 22 new tests was broken deliberately and watched fail — 25
+mutations of source and data, each applied alone, each restored and verified
+byte-identical by `sha256`.
+
+**One break produced no failure at all.** Making `tissue/aggregate-modulus` fall
+back to `youngs-modulus` did *not* fail
+`aggregate-modulus-is-not-youngs-modulus-test`: its fixture carries **both**
+fields, so the `or` never fired and the test sailed through a mutation aimed
+straight at it. Two dedicated mutations — reading the `:youngs-modulus` key, and
+returning `nil` — showed it does discriminate when the mutation reaches it. A
+test that does not fail when the thing it is named for is broken has proved
+nothing, and it is only findable by breaking it on purpose.
+
 ## Maturity
 
 | | |
 |---|---|
 | Role | capability |
 | Phase | 1 + 2 — tissue domain + closed-form sim + 3 solver backends |
-| Tests | 44 tests, 147 assertions across 7 namespaces, all green (measured 2026-09-07, `clojure -X:test`, exit 0) |
+| Tests | 65 tests, 313 assertions across 8 namespaces, all green (measured 2026-09-07, `clojure -X:test`, exit 0) |
 | Lint | 0 errors / 0 warnings (`clojure -M:lint --fail-level error`) |
 | Backends | fea (beam2 FEM) · kami-vehicle (mass-spring primitives) · kami-engine-cfd (LBM CFD) |
 
@@ -263,9 +442,9 @@ of the reason biomech has for keeping one.
 
 Biological tissue material-property accessors (`youngs-modulus` /
 `shear-modulus` / `poissons-ratio` / `density` / `source`) over a plain-map
-tissue record. Representative literature values for cortical / cancellous
-bone, skeletal muscle, skin, liver, tendon are in
-`resources/kami/biomech/tissues.edn`.
+tissue record. Thirteen tissues are in `resources/kami/biomech/tissues.edn`. Three of them
+carry read citations; see [Which tissues are sourced](#which-tissues-are-sourced-and-which-are-only-plausible)
+below for the ones that do not.
 
 ```clojure
 (require '[kotoba.biomech.tissue :as tissue]
@@ -277,7 +456,27 @@ bone, skeletal muscle, skin, liver, tendon are in
 
 Numbers are **not** patient-specific; they are population-scale representative
 ranges. Each tissue's `:source` field states the range the value was picked
-from.
+from, and where a citation exists, `:provenance` carries it with what was
+actually read.
+
+### Intervertebral disc — `kotoba.biomech.disc`
+
+Axial compression of a disc: stress -> strain -> height loss, with a boundary on
+where the linear reading holds. Settled with sources below.
+
+```clojure
+(require '[kotoba.biomech.disc :as disc])
+(def af (tissue/find-tissue (loader/presets) "Annulus-Fibrosus"))
+
+;; inside the linear range, it answers
+(:height-loss-mm (disc/axial-compression af (disc/stress-mpa->pa 0.020) 0.010))
+;=> 0.357
+
+;; at the pressure a consumer actually has, it refuses
+(let [r (disc/axial-compression af (disc/stress-mpa->pa 0.46) 0.010)]
+  [(:strain r) (:refused r) (:height-loss-mm r)])
+;=> [0.8214285714285714 :beyond-linear-range nil]
+```
 
 ### Bone closed-form mechanics — `kotoba.biomech.osteo`
 

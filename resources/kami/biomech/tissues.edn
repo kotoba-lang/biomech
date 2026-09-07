@@ -286,11 +286,70 @@
 
   {:name "Brain"
    :tissue-type :organ
-   :model {:type :hyperelastic
-           :youngs-modulus 3.0e3
+   ;; :viscoelastic, NOT :hyperelastic. Budday 2017 fits a finite VISCOELASTIC
+   ;; Ogden model, and the time dependence is not a refinement here -- it is the
+   ;; difference between 2.1 kPa and 8.1 kPa in the same tissue.
+   :model {:type :viscoelastic
+           ;; 3.0e3 -> 2.1e3, AND THE SCALAR IS THE LEAST DEFENSIBLE FIELD IN
+           ;; THIS ENTRY. Budday 2017 measured four regions of the human brain
+           ;; in shear, compression and tension. Two of the four are in the
+           ;; abstract, with an equilibrium and an instantaneous stiffness each:
+           ;;
+           ;;   gray matter cortex     mu_inf 0.7 kPa   mu_1 2.0 kPa  tau 9.7 s
+           ;;   white corona radiata   mu_inf 0.3 kPa   mu_1 0.9 kPa  tau 14.9 s
+           ;;
+           ;; As Young's moduli under incompressibility (E = 3mu) that is
+           ;; 2.1 kPa equilibrium and 8.1 kPa instantaneous for gray matter,
+           ;; 0.9 and 3.6 kPa for white. A 9x span before anything else happens.
+           ;; Then: two cycles of pre-conditioning drop the GRAY matter
+           ;; stiffness by up to a FACTOR OF THREE while white matter barely
+           ;; moves -- so the same specimen answers differently depending on
+           ;; whether it has been squeezed twice already.
+           ;;
+           ;; The scalar is the gray-matter cortex EQUILIBRIUM value because a
+           ;; quasi-static solver is asking for the long-time answer, and
+           ;; because gray matter cortex is the region a surface-contact model
+           ;; touches first. Every other number is carried, not discarded.
+           ;; ANY CONSUMER USING THIS SCALAR WITHOUT CHOOSING A REGION, A TIME
+           ;; SCALE AND A PRE-CONDITIONING STATE IS USING A NUMBER THAT COULD
+           ;; LEGITIMATELY BE 4x LARGER OR 2x SMALLER.
+           :youngs-modulus 2.1e3
+           :youngs-modulus-range [9.0e2 8.1e3]
+           :shear-modulus 7.0e2
+           ;; NOT SOURCED. Neither Poisson's ratio nor density was measured by
+           ;; any source read here.
            :poissons-ratio 0.45
-           :density 1040}
-   :source "representative; brain grey matter E approx 1-5 kPa per MR elastography, near-incompressible"}
+           :density 1040
+           :sites
+           {:basis "Budday 2017, human brain, four regions tested in shear, compression and tension with cyclic and relaxation protocols; a one-mode finite viscoelastic Ogden model calibrated simultaneously across all loading conditions. TWO of the four regions have parameters in the abstract. mu_inf is the long-time (equilibrium) stiffness, mu_1 the additional stiffness that relaxes away with time constant tau_1. Young's moduli here are 3*mu under incompressibility; see the :caveat on the source."
+            :cortex-gray-matter {:shear-modulus-equilibrium 7.0e2
+                                 :shear-modulus-viscoelastic 2.0e3
+                                 :relaxation-time-s 9.7
+                                 :youngs-modulus-equilibrium 2.1e3
+                                 :youngs-modulus-instantaneous 8.1e3
+                                 :note "The scalar comes from :youngs-modulus-equilibrium here."}
+            :corona-radiata-white-matter {:shear-modulus-equilibrium 3.0e2
+                                          :shear-modulus-viscoelastic 9.0e2
+                                          :relaxation-time-s 14.9
+                                          :youngs-modulus-equilibrium 9.0e2
+                                          :youngs-modulus-instantaneous 3.6e3}
+            :basal-ganglia :parameters-not-in-abstract
+            :corpus-callosum :parameters-not-in-abstract}
+           :preconditioning
+           {:gray-matter-softening-factor 3.0
+            :white-matter-softening-factor 1.0
+            :note "Verbatim from the abstract: \"two cycles of pre-conditioning decrease the gray matter stiffness by up to a factor three, while the white matter stiffness remains almost identical\". THE 3.0 IS AN UPPER BOUND (\"up to\"), not a measured mean, and it is stored as such. It multiplies the region and time-scale spread rather than replacing it."}}
+   :source "Budday S et al. 2017 Acta Biomater 60:315-329 (PMID 28658600): gray matter cortex mu_inf = 0.7 kPa, mu_1 = 2.0 kPa, tau_1 = 9.7 s; white matter corona radiata mu_inf = 0.3 kPa, mu_1 = 0.9 kPa, tau_1 = 14.9 s. SPECIMEN: human brain, four regions (cortex, basal ganglia, corona radiata, corpus callosum); MeSH gives Humans, Brain, Middle Aged, Aged 80 and over. LOADING: shear, compression AND tension, cyclic and relaxation, fitted simultaneously; the model reproduces tension-compression asymmetry, so this tissue does not have one modulus even at fixed region and rate. RATE: the paper's own scope sentence is \"especially at low to moderate strain rates\" -- these parameters do not describe impact. SITE: the scalar is GRAY MATTER CORTEX. REGIME: the scalar is the EQUILIBRIUM (long-time) value, 3*mu_inf; the instantaneous value for the same region is 8.1 kPa, 3.9x larger. A SINGLE NUMBER CANNOT BE DEFENDED FOR THIS TISSUE and the entry does not pretend otherwise: :youngs-modulus-range is 0.9-8.1 kPa across just the two regions the abstract reports, before pre-conditioning multiplies gray matter by up to three. CHANGED HERE: :youngs-modulus 3.0e3 -> 2.1e3; the old value cited nobody, and its claim of '1-5 kPa per MR elastography' is unsupported here because no MR-elastography source for brain was read."
+   :provenance
+   {:scalar :sourced
+    :sources
+    [{:citation "Budday S, Sommer G, Haybaeck J, Steinmann P, Holzapfel GA, Kuhl E. Rheological characterization of human brain tissue. Acta Biomater. 2017;60:315-329."
+      :doi "10.1016/j.actbio.2017.06.024"
+      :pmid "28658600"
+      :obtained :abstract
+      :retrieved-via :europe-pmc-rest
+      :read "Verbatim: \"we combine cyclic and relaxation testing under multiple loading conditions, shear, compression, and tension, to understand the rheology of four different regions of the human brain, the cortex, the basal ganglia, the corona radiata, and the corpus callosum.\" And the parameters, verbatim: \"With stiffnesses and time constants of mu_inf=0.7kPa, mu_1=2.0kPa, and tau_1=9.7s in the gray matter cortex and mu_inf=0.3kPa, mu_1=0.9kPa and tau_1=14.9s in the white matter corona radiata combined with negative parameters alpha_inf and alpha_1, this five-parameter model naturally accounts for pre-conditioning and tissue softening.\" And, verbatim: \"Strikingly, two cycles of pre-conditioning decrease the gray matter stiffness by up to a factor three, while the white matter stiffness remains almost identical.\" And the scope, verbatim: \"especially at low to moderate strain rates\". And the model's own claimed content, verbatim: \"the model with only one viscoelastic mode and a constant viscosity captures the essential features of brain tissue: nonlinearity, pre-conditioning, hysteresis, and tension-compression asymmetry.\""
+      :caveat "THE YOUNG'S MODULI IN THIS ENTRY ARE DERIVED, AND THE DERIVATION RESTS ON A CONVENTION THAT WAS NOT READ. The abstract calls mu_inf and mu_1 `stiffnesses` and does not print the strain-energy function. E = 3mu holds if mu is the small-strain shear modulus of an incompressible one-term Ogden form, which is the usual convention for this model family -- but the form itself was not read, only the abstract. If that identification is wrong the Young's moduli here scale by a constant factor and the RATIOS between them, which is what this entry is really for, are unaffected. Separately: the model has negative alpha parameters and reproduces tension-compression asymmetry, so no single linear modulus is correct for both signs of load, whatever the constant."}]}}
 
   {:name "Adipose-Tissue"
    :tissue-type :organ

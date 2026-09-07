@@ -47,7 +47,10 @@
     ;; end of that band. The modulus and density are still the legacy values.
     (is (= 8.0e5  (E "Cartilage")))       (is (= 0.05 (nu "Cartilage")))       (is (= 1100 (d "Cartilage")))
     (is (= 5.0e5  (E "Arterial-Wall")))   (is (= 0.45 (nu "Arterial-Wall")))   (is (= 1060 (d "Arterial-Wall")))
-    (is (= 3.0e3  (E "Brain")))           (is (= 0.45 (nu "Brain")))           (is (= 1040 (d "Brain")))
+    ;; BRAIN'S MODULUS IS NO LONGER LEGACY. 3.0e3 cited nobody and claimed an
+    ;; MR-elastography provenance no source read here supplies; 2.1e3 is
+    ;; 3*mu_inf for Budday's gray matter cortex. nu and density stay legacy.
+    (is (= 2.1e3  (E "Brain")))           (is (= 0.45 (nu "Brain")))           (is (= 1040 (d "Brain")))
     ;; ADIPOSE'S MODULUS IS NO LONGER LEGACY. 3.0e3 cited nobody and is within
     ;; 4% of Alkhouli's OMENTAL initial modulus rather than the subcutaneous
     ;; one; 1.6e3 is the subcutaneous value. nu and density stay legacy.
@@ -421,3 +424,51 @@
     (is (= :not-in-abstract (get-in t [:model :directional :per-direction-values])))
     (is (nil? (tissue/directional-modulus t :along-septa))
         "no direction may be answered, since none was measured")))
+
+(deftest brain-single-modulus-is-carried-with-the-span-that-defeats-it-test
+  ;; THE ENTRY'S OWN CLAIM IS THAT ITS SCALAR IS NOT DEFENSIBLE ALONE, so the
+  ;; test asserts the span rather than the number. Two regions x two time scales
+  ;; from one paper give a 9x range, and pre-conditioning multiplies gray matter
+  ;; by up to three on top of that. A consumer reading only :youngs-modulus is
+  ;; taking one corner of that box.
+  (let [t (tissue-named "Brain")
+        at #(get-in t [:model :sites %1 %2])]
+    (is (= :viscoelastic (get-in t [:model :type]))
+        "the source fits a finite viscoelastic model; time is not a refinement here")
+    (is (= 2.1e3 (tissue/youngs-modulus t)))
+    (is (= (at :cortex-gray-matter :youngs-modulus-equilibrium)
+           (tissue/youngs-modulus t))
+        "the scalar must BE the gray-matter equilibrium entry")
+    (is (= 7.0e2 (tissue/shear-modulus t)) "mu_inf for the cortex, as measured")
+    (is (= (* 3.0 (tissue/shear-modulus t)) (tissue/youngs-modulus t))
+        "and the scalar must BE 3*mu_inf, the identity the entry claims")
+    (testing "instantaneous is 3.9x equilibrium in the SAME region"
+      (let [r (/ (at :cortex-gray-matter :youngs-modulus-instantaneous)
+                 (at :cortex-gray-matter :youngs-modulus-equilibrium))]
+        (is (< 3.8 r 4.0))))
+    (testing "and the two reported regions differ by another 2.3x at equilibrium"
+      (let [r (/ (at :cortex-gray-matter :youngs-modulus-equilibrium)
+                 (at :corona-radiata-white-matter :youngs-modulus-equilibrium))]
+        (is (< 2.2 r 2.4))))
+    (testing "the carried range must span every value the entry itself holds"
+      (let [[lo hi] (get-in t [:model :youngs-modulus-range])
+            vals [(at :cortex-gray-matter :youngs-modulus-equilibrium)
+                  (at :cortex-gray-matter :youngs-modulus-instantaneous)
+                  (at :corona-radiata-white-matter :youngs-modulus-equilibrium)
+                  (at :corona-radiata-white-matter :youngs-modulus-instantaneous)]]
+        (is (= lo (apply min vals)))
+        (is (= hi (apply max vals)))))))
+
+(deftest brain-regions-without-published-parameters-are-marked-not-omitted-test
+  ;; Budday tested FOUR regions and the abstract prints parameters for TWO.
+  ;; Leaving the other two out would read as "only two regions exist"; marking
+  ;; them says the measurement was made and the numbers were not obtained.
+  (let [t (tissue-named "Brain")]
+    (is (= :parameters-not-in-abstract (get-in t [:model :sites :basal-ganglia])))
+    (is (= :parameters-not-in-abstract (get-in t [:model :sites :corpus-callosum])))
+    (testing "and the pre-conditioning factor is stored as the upper bound it is"
+      (is (= 3.0 (get-in t [:model :preconditioning :gray-matter-softening-factor])))
+      (is (re-find #"up to a factor three"
+                   (get-in t [:model :preconditioning :note])))
+      (is (re-find #"UPPER BOUND"
+                   (get-in t [:model :preconditioning :note]))))))

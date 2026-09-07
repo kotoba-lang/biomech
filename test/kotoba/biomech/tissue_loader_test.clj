@@ -560,3 +560,60 @@
         (is (< 1.02 s 1.04)
             (str "Holzapfel's own fractions 0.4/0.36/0.27 sum to " s
                  " -- carried as published, not renormalised to hide it"))))))
+
+(deftest cortical-scalar-is-cited-but-not-sourced-and-says-which-test
+  ;; THE ONE ENTRY WHERE THE SEARCH CLOSED THE CITATION AND NOT THE NUMBER.
+  ;; Both human cortical Young's moduli that could be read are ABOVE the carried
+  ;; 17 GPa, and both are micro-specimen values -- a different length scale from
+  ;; the porous cortex a beam model is made of. Adopting one would trade an
+  ;; unsourced apparent modulus for a sourced modulus of a different thing. The
+  ;; test asserts the relationship, not just the number, so the refusal to adopt
+  ;; stays checkable.
+  (let [t (tissue-named "Cortical-Bone")
+        ms #(get-in t [:model :microspecimen % :youngs-modulus])]
+    (is (= 1.7e10 (tissue/youngs-modulus t)))
+    (is (= :unsourced-but-bounded (tissue/scalar-provenance t)))
+    (is (= 2.07e10 (ms :cortical-ultrasonic)))
+    (is (= 1.86e10 (ms :cortical-microtensile)))
+    (testing "both read values are above the carried scalar, so it is bounded
+              from one side only and the entry must not claim :sourced"
+      (is (< (tissue/youngs-modulus t) (ms :cortical-microtensile)))
+      (is (< (tissue/youngs-modulus t) (ms :cortical-ultrasonic))))
+    (testing "and the tissue-level cortical/trabecular gap is ~1.8x, nothing
+              like the ~34x gap between the two apparent moduli in this file"
+      (let [tissue-ratio (/ (ms :cortical-microtensile)
+                            (ms :trabecular-microtensile))
+            apparent-ratio (/ (tissue/youngs-modulus t)
+                              (tissue/youngs-modulus
+                               (tissue-named "Cancellous-Bone")))]
+        (is (< 1.7 tissue-ratio 1.9))
+        (is (< 30.0 apparent-ratio 40.0))
+        (is (< (* 10.0 tissue-ratio) apparent-ratio)
+            "the two ratios must stay an order of magnitude apart")))))
+
+(deftest cortical-anisotropy-ratio-is-refused-with-two-reasons-test
+  ;; TWO SOURCES SOUGHT FOR THE ~1.5x LONGITUDINAL-TO-TRANSVERSE RATIO AND
+  ;; NEITHER COULD SUPPLY IT, FOR TWO DIFFERENT REASONS. Reilly & Burstein 1975
+  ;; has no abstract at all -- a distinct outcome from "the numbers are not in
+  ;; the abstract", and it gets its own :could-not-obtain value so the two can
+  ;; never be read as the same failure.
+  (let [t (tissue-named "Cortical-Bone")
+        un (tissue/unobtained t)
+        by #(first (filter (fn [s] (= % (:pmid s))) un))]
+    (is (= 2 (count un)))
+    (is (= :no-abstract-published (:could-not-obtain (by "1206042"))))
+    (is (= :numbers-not-in-abstract (:could-not-obtain (by "15212934"))))
+    (is (not= (:could-not-obtain (by "1206042"))
+              (:could-not-obtain (by "15212934")))
+        "an unpublished abstract and an abstract without numbers are different
+         failures and must not collapse to one marker")
+    (testing "so no anisotropy ratio is carried and no direction answers"
+      (is (= :not-obtained (get-in t [:model :directional :anisotropy-ratio])))
+      (is (= :not-obtained
+             (get-in t [:model :directional :per-direction-youngs-moduli])))
+      (doseq [dir [:longitudinal :transverse :radial]]
+        (is (nil? (tissue/directional-modulus t dir)))))
+    (testing "and Hunt's Cii values are kept out of any :youngs-modulus key"
+      (is (= 3.411e10 (get-in t [:model :directional
+                                 :mean-tibial-stiffness-coefficient])))
+      (is (nil? (get-in t [:model :directional :youngs-modulus]))))))

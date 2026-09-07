@@ -3,10 +3,75 @@
    :tissue-type :bone
    :sub-type :cortical
    :model {:type :linear-elastic
+           ;; UNCHANGED, AND STILL NOBODY'S MEASUREMENT. This is the one entry
+           ;; where the search closed the citation and NOT the number.
+           ;;
+           ;; The two human cortical Young's moduli that could actually be read
+           ;; are Rho 1993's micro-specimens: 20.7 +/- 1.9 GPa ultrasonic and
+           ;; 18.6 +/- 3.5 GPa microtensile. BOTH ARE ABOVE 17 GPa, so the
+           ;; carried value is not contradicted -- but neither is it adopted,
+           ;; for a stated reason: those specimens were "cut to similar size as
+           ;; individual trabeculae", so they omit the Haversian porosity that a
+           ;; whole cortical beam has, and Rho's own abstract warns they were
+           ;; DRIED before microtensile testing. Both effects push a
+           ;; micro-specimen modulus ABOVE the apparent modulus of the bone a
+           ;; beam model is made of. Adopting 18.6 GPa here would be adopting a
+           ;; number measured on a different length scale.
+           ;;
+           ;; 17 GPa is the classic whole-specimen longitudinal femoral value,
+           ;; and its usual source is Reilly & Burstein 1975 -- WHICH PUBLISHES
+           ;; NO ABSTRACT AT ALL. See :unobtained.
            :youngs-modulus 1.7e10
+           ;; NOT SOURCED. No source read here measured a Poisson's ratio or a
+           ;; density for cortical bone.
            :poissons-ratio 0.30
-           :density 1900}
-   :source "representative literature value; cortical bone E in [15,20] GPa, density approx 1800-2000 kg/m^3"}
+           :density 1900
+           :microspecimen
+           {:basis "Rho 1993: Young's modulus of micro-specimens of human cortical bone cut to the size of individual trabeculae, measured two ways on the same material. A TISSUE-LEVEL modulus -- it is not the apparent modulus of a porous cortical shell, and the entry's scalar is not taken from it."
+            :cortical-ultrasonic {:youngs-modulus 2.07e10 :sd 1.9e9}
+            :cortical-microtensile {:youngs-modulus 1.86e10 :sd 3.5e9}
+            :trabecular-ultrasonic {:youngs-modulus 1.48e10 :sd 1.4e9}
+            :trabecular-microtensile {:youngs-modulus 1.04e10 :sd 3.5e9}
+            :note "The trabecular pair is carried here, on the cortical entry, because it is the same sentence of the same paper and because its point is comparative: cortical TISSUE is stiffer than trabecular TISSUE by about 40% (18.6 vs 10.4 GPa microtensile), which is nothing like the ~34x gap between the two APPARENT moduli this file carries. Confusing those two length scales is how a trabecular entry ends up with a cortical number."}
+           :directional
+           {:basis "Hunt 1998: 19 individuals, 14 femurs and 16 tibias, ultrasonic measurement at four anatomical positions in all three planes of orientation."
+            :ordering "Longitudinal stiffer than transverse and radial, in both femur and tibia."
+            :anisotropy-ratio :not-obtained
+            :per-direction-youngs-moduli :not-obtained
+            :mean-tibial-stiffness-coefficient 3.411e10
+            :mean-femoral-stiffness-coefficient 3.252e10
+            :note "THE TWO NUMBERS ABOVE ARE Cii, ELASTIC STIFFNESS COEFFICIENTS, NOT YOUNG'S MODULI, even though the paper's own title and text call Cii `the elastic modulus`. For an orthotropic solid the diagonal stiffness C11 relates to E1 through the whole compliance matrix and is substantially larger; 34 GPa read as a Young's modulus for cortical bone would be roughly double anything in the literature. They are carried under a field name that cannot be mistaken for E, and no value in this entry is derived from them. The specimens were also FORMALIN-FIXED."}}
+   :source "Rho JY, Ashman RB & Turner CH 1993 J Biomech 26(2):111-119 (PMID 8429054): human cortical micro-specimen Young's modulus 20.7 +/- 1.9 GPa ultrasonic, 18.6 +/- 3.5 GPa microtensile. + Hunt KD et al. 1998 Med Biol Eng Comput 36(1):51-56 (PMID 9614748): direction of the anisotropy, longitudinal stiffer than transverse and radial. THE SCALAR 1.7e10 IS UNCHANGED AND IS NOBODY'S MEASUREMENT -- both read values lie above it, and both come from specimens cut to trabecula size and (for the microtensile pair) dried, so they over-estimate the apparent modulus of a porous cortical beam. SPECIMEN: human, femur / humerus / tibia (species and sites from the PubMed MeSH record for Rho; the abstract does not name them), cadaveric, aged and middle-aged. DIRECTION: the scalar is LONGITUDINAL. THE ANISOTROPY RATIO IS NOT CARRIED, because it could not be read -- see :unobtained. RATE: quasi-static microtensile and ultrasonic (MHz); an ultrasonic figure is a high-frequency measurement and is expected to exceed a quasi-static one, which is part of why the two read values differ from each other."
+   :provenance
+   {:scalar :unsourced-but-bounded
+    :sources
+    [{:citation "Rho JY, Ashman RB, Turner CH. Young's modulus of trabecular and cortical bone material: ultrasonic and microtensile measurements. J Biomech. 1993;26(2):111-119."
+      :doi "10.1016/0021-9290(93)90042-d"
+      :pmid "8429054"
+      :obtained :abstract
+      :retrieved-via :europe-pmc-rest
+      :read "Method, verbatim: \"An ultrasonic technique and microtensile testing were used to determine the Young's modulus of individual trabeculae and micro-specimens of cortical bone cut to similar size as individual trabeculae.\" Values, verbatim: \"The average trabecular Young's modulus measured ultrasonically and mechanically was 14.8 GPa (S.D. 1.4) and 10.4 (S.D. 3.5) and the average Young's modulus of microspecimens of cortical bone measured ultrasonically and mechanically was 20.7 GPa (S.D. 1.9) and 18.6 GPa (S.D. 3.5).\" The paper's own warning, verbatim: \"However, the specimens were dried before microtensile testing so Young's modulus values may have been greater than those of trabeculae in vivo.\" And the conclusion, verbatim: \"These results suggest that when considered mechanically, cortical and trabecular bone are not the same material.\""
+      :caveat "A TISSUE-LEVEL MODULUS AT THE WRONG LENGTH SCALE FOR THIS ENTRY. Micro-specimens the size of a trabecula contain no Haversian canals, so they measure the bone matrix rather than the porous cortex a beam model is made of, and drying raises the number further. That is why the carried 1.7e10 was not replaced by 1.86e10 even though 1.86e10 is a read value and 1.7e10 is not: adopting it would trade an unsourced apparent modulus for a sourced modulus of a different thing. The abstract never says the species; Humans, Femur, Humerus and Tibia come from the PubMed MeSH record."}
+     {:citation "Hunt KD, O'Loughlin VD, Fitting DW, Adler L. Ultrasonic determination of the elastic modulus of human cortical bone. Med Biol Eng Comput. 1998;36(1):51-56."
+      :doi "10.1007/bf02522857"
+      :pmid "9614748"
+      :obtained :abstract
+      :retrieved-via :europe-pmc-rest
+      :supplies-number? false
+      :read "Verbatim: \"The elastic modulus (Cii) of the cortical bones of 19 individuals (14 femurs and 16 tibias, fixed in formalin) was determined ultrasonically. Elastic moduli were measured at four anatomical positions (anterior, posterior, medial and lateral) and in all three planes of orientation (transverse, longitudinal and radial). The mean tibial Cii (34.11 GPa) was greater than that obtained for femurs (32.52 GPa).\" And the direction this entry uses, verbatim: \"Cii was significantly higher in the longitudinal plane than the transverse or radial planes in both the femur and the tibia.\" And, verbatim: \"No age effects were observed. There were no significant differences between males and females, or between African Americans and European Americans.\""
+      :caveat "THIS PAPER SUPPLIES A DIRECTION AND NOT A NUMBER, HENCE :supplies-number? false, AND ITS NUMBERS ARE A TRAP. Cii is an elastic STIFFNESS COEFFICIENT and the paper itself calls it `the elastic modulus`; 34 GPa read as a Young's modulus would be about double anything in the cortical-bone literature. It also publishes only the longitudinal means, so the transverse values needed for a ratio are absent, and the specimens were formalin-fixed. What it does establish, on published authority, is the SIGN of the anisotropy -- which is why this entry states its scalar is longitudinal instead of leaving the direction unsaid."}]
+    :unobtained
+    [{:citation "Reilly DT, Burstein AH. The elastic and ultimate properties of compact bone tissue. J Biomech. 1975;8(6):393-405."
+      :doi "10.1016/0021-9290(75)90075-5"
+      :pmid "1206042"
+      :could-not-obtain :no-abstract-published
+      :note "THIS IS THE SOURCE OF THE ~1.5x LONGITUDINAL-TO-TRANSVERSE RATIO THAT TEXTBOOKS QUOTE, AND IT HAS NO ABSTRACT TO READ. Checked three ways and all three agree: the Europe PMC REST record returns the citation with no abstractText, the PubMed efetch XML for PMID 1206042 contains no <Abstract> element at all, and Crossref holds no abstract for the DOI. This is not a paywall and not a retrieval failure -- the 1975 Journal of Biomechanics did not carry an abstract for this article. So the anisotropy ratio is NOT carried anywhere in this entry, and a consumer that needs cortical bone's transverse modulus will not find it here."}
+     {:citation "Dong XN, Guo XE. The dependence of transversely isotropic elasticity of human femoral cortical bone on porosity. J Biomech. 2004;37(8):1281-1287."
+      :doi "10.1016/j.jbiomech.2003.12.011"
+      :pmid "15212934"
+      :could-not-obtain :numbers-not-in-abstract
+      :retrieved-via :europe-pmc-rest
+      :note "THE SECOND CHANCE AT THE RATIO, AND IT ALSO FAILS. This paper measures exactly the right quantities on exactly the right specimens -- verbatim: \"The longitudinal Young's modulus, transverse Young's modulus, longitudinal shear modulus, transverse shear modulus, and longitudinal Poisson's ratio of cortical bone were determined from eighteen groups of longitudinal and transverse specimens using tensile and torsional tests\", on \"cylindrical waisted specimens of cortical bone ... harvested from the middle diaphysis of three pairs of human femora\". Its abstract publishes NOT ONE OF THEM. What it does publish is a reason the ratio would not have been a constant even if it had been read, verbatim: \"the anisotropic ratios of cortical bone elasticity were found to be significantly (p<0.01) negatively correlated with its porosity, indicating that cortical bone tended to become more isotropic when its porosity increased.\" So a single anisotropy ratio for cortical bone is a porosity-dependent quantity written as a constant. NO NUMBER IN THIS ENTRY COMES FROM DONG & GUO."}]}}
 
   {:name "Cancellous-Bone"
    :tissue-type :bone

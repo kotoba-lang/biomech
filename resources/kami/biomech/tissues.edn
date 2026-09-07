@@ -333,10 +333,58 @@
   {:name "Arterial-Wall"
    :tissue-type :vasculature
    :model {:type :hyperelastic
-           :youngs-modulus 5.0e5
+           ;; 5.0e5 -> 1.18e6. THE OLD VALUE WAS A LAYER FIGURE USED AS A WALL
+           ;; FIGURE. Its note said "arterial wall (MEDIA) incremental E approx
+           ;; 0.3-1 MPa" -- and Holzapfel 2005, dissecting human coronary
+           ;; arteries layer by layer, found the media in the longitudinal
+           ;; direction to be the SOFTEST of the three layers. So the entry took
+           ;; the softest layer of a three-layer composite and offered it as the
+           ;; whole wall.
+           ;;
+           ;; Koullias 2005 measured 20 control patients with NORMAL aortas in
+           ;; vivo and reports an incremental elastic modulus of
+           ;; 1.18 +/- 0.21 MPa, i.e. 0.97-1.39 MPa. The retired 5.0e5 is BELOW
+           ;; that whole band -- the file was understating arterial stiffness by
+           ;; roughly a factor of two.
+           :youngs-modulus 1.18e6
+           :youngs-modulus-sd 2.1e5
+           ;; NOT SOURCED. Neither Poisson's ratio nor density was measured by
+           ;; any source read here.
            :poissons-ratio 0.45
-           :density 1060}
-   :source "representative; arterial wall (media) incremental E approx 0.3-1 MPa, highly anisotropic & hyperelastic"}
+           :density 1060
+           :layers
+           {:basis "Holzapfel 2005: 13 human left anterior descending coronary arteries, 78 prepared strips, each layer tested separately in axial and circumferential directions under cyclic quasi-static uniaxial tension. THE ABSTRACT PUBLISHES NO LAYER MODULUS -- it gives thickness fractions, ultimate stresses, and an ORDERING. The ordering is what this entry uses."
+            :stiffness-ordering "Intima stiffest over the whole deformation domain; media in the longitudinal direction softest."
+            :thickness-fraction-adventitia 0.40
+            :thickness-fraction-media 0.36
+            :thickness-fraction-intima 0.27
+            :ultimate-tensile-stress-adventitia-circumferential 1.43e6
+            :ultimate-tensile-stress-adventitia-longitudinal 1.30e6
+            :per-layer-moduli :not-in-abstract
+            :note "Media and intima ultimate tensile stresses are, verbatim, \"on average three times smaller\" than the adventitia's. NO MODULUS IN THIS ENTRY COMES FROM HOLZAPFEL; the thickness fractions and ultimate stresses are carried as the structural facts that make a single wall modulus a composite average."}
+           :directional
+           {:basis "Koullias 2005 derives its incremental elastic modulus from pressure and diameter, so it is a CIRCUMFERENTIAL wall property. Holzapfel 2005 tested axial and circumferential strips of every layer and reports, verbatim, \"anisotropic and strong nonlinear behavior in both loading directions\" without publishing the moduli."
+            :scalar-direction :circumferential
+            :per-direction-values :not-in-abstract}}
+   :source "Koullias G et al. 2005 J Thorac Cardiovasc Surg 130(3):677-683 (PMID 16153912): incremental elastic modulus 1.18 +/- 0.21 MPa in normal human aortas, 1.93 +/- 0.88 MPa in aneurysmal ones. SPECIMEN: 20 CONTROL PATIENTS WITH NORMAL AORTAS undergoing coronary artery bypass grafting -- an older surgical population, not young healthy volunteers -- measured in vivo by direct epiaortic echocardiography at operation. SITE: ASCENDING AORTA. This is an elastic conduit artery; a muscular artery or an arteriole is a different vessel and this entry does not describe one. DIRECTION: CIRCUMFERENTIAL. The modulus is computed from aortic diameter and wall thickness in systole and diastole, so it is a pressure-diameter property and says nothing about the longitudinal direction. RATE: the cardiac cycle, at each patient's own systolic and diastolic pressure. An INCREMENTAL modulus is defined at an operating point; it is not a material constant and rises with pressure. STRUCTURE: the wall is three mechanically distinct layers (Holzapfel 2005) and this scalar is their composite. CHANGED HERE: :youngs-modulus 5.0e5 -> 1.18e6, because 5.0e5 cited nobody, described the MEDIA rather than the wall, and lies below the whole 0.97-1.39 MPa measured band."
+   :provenance
+   {:scalar :sourced
+    :sources
+    [{:citation "Koullias G, Modak R, Tranquilli M, Korkolis DP, Barash P, Elefteriades JA. Mechanical deterioration underlies malignant behavior of aneurysmal human ascending aorta. J Thorac Cardiovasc Surg. 2005;130(3):677-683."
+      :doi "10.1016/j.jtcvs.2005.02.052"
+      :pmid "16153912"
+      :obtained :abstract
+      :retrieved-via :europe-pmc-rest
+      :read "Verbatim: \"Incremental elastic modulus deteriorates (1.93 +/- 0.88 MPa vs 1.18 +/- 0.21 MPa, P < .05) in aneurysmal aortas relative to that in normal aortas.\" Method, verbatim: \"We measured the mechanical characteristics of the aorta by direct epiaortic echocardiography at the time of surgery in 33 patients with ascending aortic aneurysm undergoing aortic replacement and in 20 control patients with normal aortas undergoing coronary artery bypass grafting. Six parameters were measured in all patients: aortic diameter in systole and diastole, aortic wall thickness in systole and diastole, and blood pressure in systole and diastole. These were used to calculate mechanical characteristics of the aorta from standard equations.\" And the accompanying stress figures, verbatim: \"Aortic wall stress rises to 157.8 kPa for the aneurysmal aorta, compared with 92.5 kPa for normal aortas.\""
+      :caveat "AN INCREMENTAL MODULUS IS DEFINED AT AN OPERATING POINT AND IS NOT A MATERIAL CONSTANT. It is the local slope of a stiffening pressure-diameter curve at each patient's own blood pressure, so it moves with pressure, and the paper's own subject is that it also moves with disease -- 1.93 MPa in aneurysmal aortas, 64% higher. The controls are CABG patients, an older population with coronary disease, so 1.18 MPa is a surgical-control value and not a young-healthy one. It is derived from diameter and wall-thickness measurements by standard equations rather than from a stress-strain test on excised tissue."}
+     {:citation "Holzapfel GA, Sommer G, Gasser CT, Regitnig P. Determination of layer-specific mechanical properties of human coronary arteries with nonatherosclerotic intimal thickening and related constitutive modeling. Am J Physiol Heart Circ Physiol. 2005;289(5):H2048-H2058."
+      :doi "10.1152/ajpheart.00934.2004"
+      :pmid "16006541"
+      :obtained :abstract
+      :retrieved-via :europe-pmc-rest
+      :supplies-number? false
+      :read "Verbatim: \"Preconditioned prepared strips (n = 78) of segments from the midregion of the left anterior descending coronary artery from the individual layers in axial and circumferential directions were subjected to cyclic quasi-static uniaxial tension tests\". And the structure, verbatim: \"ratios of adventitia, media, and intima thickness to total wall thickness were 0.4 +/- 0.03, 0.36 +/- 0.03, and 0.27 +/- 0.02, respectively\". And the ordering this entry relies on, verbatim: \"Stress-stretch responses for the individual tissues showed pronounced mechanical heterogeneity. The intima is the stiffest layer over the whole deformation domain, whereas the media in the longitudinal direction is the softest. All specimens exhibited small hysteresis and anisotropic and strong nonlinear behavior in both loading directions.\" And, verbatim: \"The media and intima showed similar ultimate tensile stresses, which are on average three times smaller than ultimate tensile stresses in the adventitia (1,430 +/- 604 kPa circumferential and 1,300 +/- 692 kPa longitudinal).\""
+      :caveat "NO MODULUS IN THIS ENTRY COMES FROM HOLZAPFEL -- hence :supplies-number? false. The abstract publishes thickness ratios, ultimate stresses and an ORDERING, and no layer modulus. It is here for two reasons. First, it identifies the retired 5.0e5 as a media figure and states that the media longitudinally is the SOFTEST layer, so using it for the whole wall understated the wall. Second, its conclusion -- verbatim, \"the need to model nonstenotic human coronary arteries with nonatherosclerotic intimal thickening as a composite structure composed of three solid mechanically relevant layers with different mechanical properties\" -- is a direct statement that the single scalar this entry carries is a simplification. Note also that Holzapfel measured CORONARY arteries and Koullias the ASCENDING AORTA; they are different vessels and the layer ordering is used qualitatively, not transferred as values."}]}}
 
   {:name "Brain"
    :tissue-type :organ

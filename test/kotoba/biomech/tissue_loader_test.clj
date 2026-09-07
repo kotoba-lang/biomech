@@ -50,7 +50,10 @@
     ;; Keenan 2009 measured 0.00-0.05 in human cartilage and 0.05 is the high
     ;; end of that band. The modulus and density are still the legacy values.
     (is (= 8.0e5  (E "Cartilage")))       (is (= 0.05 (nu "Cartilage")))       (is (= 1100 (d "Cartilage")))
-    (is (= 5.0e5  (E "Arterial-Wall")))   (is (= 0.45 (nu "Arterial-Wall")))   (is (= 1060 (d "Arterial-Wall")))
+    ;; THE ARTERIAL WALL'S MODULUS IS NO LONGER LEGACY. 5.0e5 cited nobody,
+    ;; described the MEDIA rather than the whole wall, and lies below the whole
+    ;; 0.97-1.39 MPa band Koullias measured. nu and density stay legacy.
+    (is (= 1.18e6 (E "Arterial-Wall")))   (is (= 0.45 (nu "Arterial-Wall")))   (is (= 1060 (d "Arterial-Wall")))
     ;; BRAIN'S MODULUS IS NO LONGER LEGACY. 3.0e3 cited nobody and claimed an
     ;; MR-elastography provenance no source read here supplies; 2.1e3 is
     ;; 3*mu_inf for Budday's gray matter cortex. nu and density stay legacy.
@@ -519,3 +522,41 @@
     (let [un (first (tissue/unobtained t))]
       (is (= "20420970" (:pmid un)))
       (is (= :numbers-not-in-abstract (:could-not-obtain un))))))
+
+(deftest arterial-scalar-is-inside-the-measured-band-the-old-one-missed-test
+  ;; THE OLD VALUE WAS NOT MERELY UNCITED, IT WAS OUTSIDE THE MEASUREMENT.
+  ;; Koullias reports 1.18 +/- 0.21 MPa for normal aortas, a band of
+  ;; 0.97-1.39 MPa. The retired 5.0e5 is below all of it. Asserting the band
+  ;; rather than the number is what makes this a claim about evidence.
+  (let [t (tissue-named "Arterial-Wall")
+        e  (tissue/youngs-modulus t)
+        sd (get-in t [:model :youngs-modulus-sd])]
+    (is (= 1.18e6 e))
+    (is (= 2.1e5 sd))
+    (testing "the scalar is the reported mean, so it sits at the band's centre"
+      (is (< (- e sd) e (+ e sd))))
+    (testing "and the retired 5.0e5 is below the band's lower bound"
+      (is (< 5.0e5 (- e sd))))
+    (is (= :circumferential (get-in t [:model :directional :scalar-direction]))
+        "a pressure-diameter modulus is circumferential and must say so")))
+
+(deftest arterial-layer-structure-is-carried-without-inventing-layer-moduli-test
+  ;; Holzapfel identifies the retired value as a MEDIA figure and states the
+  ;; media longitudinally is the SOFTEST layer -- which is why using it for the
+  ;; whole wall understated the wall. His abstract publishes no layer modulus,
+  ;; so the entry carries thickness fractions and an ordering and marks the
+  ;; moduli absent. Supplying none is the result; inventing three would not be.
+  (let [t (tissue-named "Arterial-Wall")
+        L #(get-in t [:model :layers %])
+        holz (first (filter #(= "16006541" (:pmid %)) (tissue/sources t)))]
+    (is (false? (:supplies-number? holz)))
+    (is (= :not-in-abstract (L :per-layer-moduli)))
+    (is (re-find #"intima is the stiffest layer" (:read holz)))
+    (is (re-find #"media in the longitudinal direction is the softest" (:read holz)))
+    (testing "the three thickness fractions are carried and must sum to ~1"
+      (let [s (+ (L :thickness-fraction-adventitia)
+                 (L :thickness-fraction-media)
+                 (L :thickness-fraction-intima))]
+        (is (< 1.02 s 1.04)
+            (str "Holzapfel's own fractions 0.4/0.36/0.27 sum to " s
+                 " -- carried as published, not renormalised to hide it"))))))

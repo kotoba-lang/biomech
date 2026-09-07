@@ -295,10 +295,52 @@
   {:name "Adipose-Tissue"
    :tissue-type :organ
    :model {:type :hyperelastic
-           :youngs-modulus 3.0e3
+           ;; 3.0e3 -> 1.6e3. THE OLD VALUE WAS SILENTLY VISCERAL FAT.
+           ;; Alkhouli 2013 measured paired subcutaneous and omental samples
+           ;; from the same 19 subjects and they differ significantly:
+           ;;   subcutaneous  initial 1.6 +/- 0.8 kPa   final 11.7 +/- 6.4 kPa
+           ;;   omental       initial 2.9 +/- 1.5 kPa   final 32 +/- 15.6 kPa
+           ;; The carried 3.0 kPa is 1.9x the subcutaneous initial modulus and
+           ;; is within 4% of the OMENTAL one. A generic "Adipose-Tissue" in a
+           ;; body model is subcutaneous fat -- the layer under the skin that a
+           ;; contact model deforms -- so the scalar is now the subcutaneous
+           ;; initial modulus, and the omental values sit beside it under
+           ;; :sites rather than being averaged in.
+           :youngs-modulus 1.6e3
+           ;; NOT SOURCED. No source read here measured a Poisson's ratio or a
+           ;; density for adipose tissue.
            :poissons-ratio 0.45
-           :density 950}
-   :source "representative; adipose tissue E approx 1-5 kPa, near-incompressible"}
+           :density 950
+           :sites
+           {:basis "Alkhouli 2013: human adipose tissue from 44 surgical subjects, tensile force/extension, PAIRED subcutaneous and omental samples in 19 of them. Two depots, two strain regimes, four numbers, and the spread between them is 20x. The tissue is nonlinear up to 30% strain, so 'initial' and 'final' are the two ends of one curve and not two materials."
+            :subcutaneous {:initial-youngs-modulus 1.6e3 :initial-sd 8.0e2
+                           :final-youngs-modulus 1.17e4 :final-sd 6.4e3
+                           :note "The depot under the skin. This is where the scalar comes from."}
+            :omental {:initial-youngs-modulus 2.9e3 :initial-sd 1.5e3
+                      :final-youngs-modulus 3.2e4 :final-sd 1.56e4
+                      :note "Visceral fat, significantly stiffer at both ends (P = 0.001 initial, P < 0.001 final)."}}
+           :directional
+           {:basis "Sommer 2013 found human abdominal adipose tissue to be ANISOTROPIC under multiaxial loading, and attributes it to aligned collagenous septa seen histologically."
+            :per-direction-values :not-in-abstract
+            :note "Alkhouli's tensile moduli, which is where every number in this entry comes from, are uniaxial and carry no direction. So this entry knows the tissue is anisotropic and cannot say by how much."}}
+   :source "Alkhouli N et al. 2013 Am J Physiol Endocrinol Metab 305(12):E1427-E1435 (PMID 24105412): human subcutaneous adipose initial modulus 1.6 +/- 0.8 kPa, final 11.7 +/- 6.4 kPa; omental 2.9 +/- 1.5 and 32 +/- 15.6 kPa. SPECIMEN: adipose tissue from 44 human subjects undergoing surgery, 19 of them contributing PAIRED subcutaneous and omental samples. SITE: the scalar is SUBCUTANEOUS. DIRECTION: none carried -- Alkhouli's tests are uniaxial, and Sommer 2013 establishes that the tissue is anisotropic without publishing the values, so the anisotropy is recorded as unmeasured here rather than assumed absent. RATE: quasi-static force/extension; the tissue is nonlinear up to 30% strain and its stress relaxation follows a two-exponential time course, so a single modulus describes one point of one curve. REGIME: the scalar is the INITIAL modulus; the final modulus at 30% strain is 7x larger. CHANGED HERE: :youngs-modulus 3.0e3 -> 1.6e3, because 3.0e3 cited nobody and is within 4% of the OMENTAL value rather than the subcutaneous one. RETRIEVAL: this abstract is NOT in Europe PMC's record for this PMID; it came from Crossref."
+   :provenance
+   {:scalar :sourced
+    :sources
+    [{:citation "Alkhouli N, Mansfield J, Green E, Bell J, Knight B, Liversedge N, Tham JC, Welbourn R, Shore AC, Kos K, Winlove CP. The mechanical properties of human adipose tissues and their relationships to the structure and composition of the extracellular matrix. Am J Physiol Endocrinol Metab. 2013;305(12):E1427-E1435."
+      :doi "10.1152/ajpendo.00111.2013"
+      :pmid "24105412"
+      :obtained :abstract
+      :retrieved-via :crossref
+      :read "Verbatim: \"AT was obtained from 44 subjects undergoing surgery. Force/extension and stress/relaxation data were obtained.\" And: \"AT showed nonlinear stress/strain characteristics of up to a 30% strain. Comparing paired subcutaneous and omental samples ( n = 19), the moduli were lower in subcutaneous: initial 1.6 +/- 0.8 (means +/- SD) and 2.9 +/- 1.5 kPa ( P = 0.001), final 11.7 +/- 6.4 and 32 +/- 15.6 kPa ( P < 0.001), respectively.\" And: \"The energy dissipation density was lower in subcutaneous AT ( n = 13): 0.1 +/- 0.1 and 0.3 +/- 0.2 kPa, respectively ( P = 0.006). Stress/relaxation followed a two-exponential time course.\""
+      :caveat "EUROPE PMC RETURNS THIS RECORD WITH NO abstractText AT ALL, and a search that only used Europe PMC would have concluded the numbers were unobtainable. They came from Crossref, whose deposited abstract is the publisher's own. That is a retrieval difference, not a content difference, and it is recorded because the next person to look will hit the same empty field. Separately: these are TENSILE moduli. Subcutaneous fat under a body model is usually in compression, and no source read here measured adipose in compression."}]
+    :unobtained
+    [{:citation "Sommer G, Eder M, Kovacs L, Pathak H, Bonitz L, Mueller C, Regitnig P, Holzapfel GA. Multiaxial mechanical properties and constitutive modeling of human adipose tissue: a basis for preoperative simulations in plastic and reconstructive surgery. Acta Biomater. 2013;9(11):9036-9048."
+      :doi "10.1016/j.actbio.2013.06.011"
+      :pmid "23811521"
+      :could-not-obtain :numbers-not-in-abstract
+      :retrieved-via :europe-pmc-rest
+      :note "This is the source that would supply the anisotropy. Its abstract was read in full and publishes NO constitutive parameter -- it states only that \"human abdominal adipose tissues under quasi-static and dynamic multiaxial loadings can be characterized as a nonlinear, anisotropic and viscoelastic soft biological material\" and that \"The aligned collagenous septa observed in histological investigations causes the anisotropy of the tissue\". The paper says its parameters \"are intended to serve as a basis for soft tissue simulations using the finite element method\" and then does not print them in the abstract. So this entry knows adipose tissue is anisotropic, on this paper's authority, and carries an isotropic scalar because the numbers that would replace it were not obtained. NO NUMBER IN THIS ENTRY COMES FROM SOMMER."}]}}
   ;; ---------------------------------------------------------------------------
   ;; INTERVERTEBRAL DISC - two materials, not one.
   ;;

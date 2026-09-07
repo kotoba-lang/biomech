@@ -48,7 +48,10 @@
     (is (= 8.0e5  (E "Cartilage")))       (is (= 0.05 (nu "Cartilage")))       (is (= 1100 (d "Cartilage")))
     (is (= 5.0e5  (E "Arterial-Wall")))   (is (= 0.45 (nu "Arterial-Wall")))   (is (= 1060 (d "Arterial-Wall")))
     (is (= 3.0e3  (E "Brain")))           (is (= 0.45 (nu "Brain")))           (is (= 1040 (d "Brain")))
-    (is (= 3.0e3  (E "Adipose-Tissue")))  (is (= 0.45 (nu "Adipose-Tissue")))  (is (= 950  (d "Adipose-Tissue")))
+    ;; ADIPOSE'S MODULUS IS NO LONGER LEGACY. 3.0e3 cited nobody and is within
+    ;; 4% of Alkhouli's OMENTAL initial modulus rather than the subcutaneous
+    ;; one; 1.6e3 is the subcutaneous value. nu and density stay legacy.
+    (is (= 1.6e3  (E "Adipose-Tissue")))  (is (= 0.45 (nu "Adipose-Tissue")))  (is (= 950  (d "Adipose-Tissue")))
     (testing "the ligament was re-sourced, NOT re-valued"
       ;; Neumann 1992 gives an ALL 'overall' tensile modulus of 759 MPa (S.D.
       ;; 336), i.e. 423-1095 MPa. 5.0e8 Pa was already inside that band, so
@@ -361,3 +364,60 @@
       (is (= 1.216e4 (get-in t [:model :capsule :tensile-youngs-modulus-axial])))
       (is (not= (get-in t [:model :capsule :tensile-youngs-modulus-axial])
                 (tissue/youngs-modulus t))))))
+
+(deftest adipose-scalar-is-subcutaneous-not-the-stiffer-omental-depot-test
+  ;; PAIRED SAMPLES FROM THE SAME 19 SUBJECTS, TWO DEPOTS, SIGNIFICANTLY
+  ;; DIFFERENT. The old 3.0e3 sat within 4% of the OMENTAL initial modulus, so
+  ;; a body model asking for "fat" was quietly getting visceral fat. The scalar
+  ;; now names its depot and the other depot is carried, not averaged in.
+  (let [t (tissue-named "Adipose-Tissue")
+        at #(get-in t [:model :sites %1 %2])]
+    (is (= 1.6e3 (tissue/youngs-modulus t)))
+    (is (= (at :subcutaneous :initial-youngs-modulus) (tissue/youngs-modulus t))
+        "the scalar must BE the subcutaneous initial entry")
+    (is (not= (at :omental :initial-youngs-modulus) (tissue/youngs-modulus t)))
+    (is (= 2.9e3  (at :omental :initial-youngs-modulus)))
+    (is (= 1.17e4 (at :subcutaneous :final-youngs-modulus)))
+    (is (= 3.2e4  (at :omental :final-youngs-modulus)))
+    (testing "omental is stiffer than subcutaneous at BOTH ends of the curve"
+      (is (< (at :subcutaneous :initial-youngs-modulus)
+             (at :omental :initial-youngs-modulus)))
+      (is (< (at :subcutaneous :final-youngs-modulus)
+             (at :omental :final-youngs-modulus))))
+    (testing "and the retired 3.0e3 really was nearer omental than subcutaneous"
+      (is (< (abs (- 3.0e3 (at :omental :initial-youngs-modulus)))
+             (abs (- 3.0e3 (at :subcutaneous :initial-youngs-modulus))))))))
+
+(deftest adipose-abstract-came-from-crossref-not-europe-pmc-test
+  ;; A RETRIEVAL FACT WORTH PINNING. Europe PMC returns this PMID with no
+  ;; abstractText at all, so a search that used only Europe PMC would have
+  ;; recorded these numbers as unobtainable. Every source in the file now says
+  ;; how it was reached, and this is the one where it mattered.
+  (let [t (tissue-named "Adipose-Tissue")
+        src (first (tissue/sources t))]
+    (is (= :crossref (:retrieved-via src)))
+    (is (= :abstract (:obtained src)))
+    (is (re-find #"initial 1\.6 \+/- 0\.8 \(means \+/- SD\) and 2\.9 \+/- 1\.5 kPa"
+                 (:read src))
+        "the quotation must carry both depots' initial moduli")
+    (testing "and every other source in the catalogue also declares its route"
+      (doseq [tis (loader/presets)
+              s   (concat (tissue/sources tis) (tissue/unobtained tis))]
+        (is (or (nil? (:retrieved-via s))
+                (contains? #{:crossref :europe-pmc-rest} (:retrieved-via s)))
+            (str (:name tis) ": unknown retrieval route "
+                 (pr-str (:retrieved-via s))))))))
+
+(deftest adipose-anisotropy-is-known-but-unquantified-test
+  ;; Sommer 2013 establishes that the tissue is anisotropic and prints no
+  ;; parameter. The entry carries an isotropic scalar BECAUSE the numbers that
+  ;; would replace it were not obtained -- not because the anisotropy is absent.
+  ;; Those are different states and the file must not collapse them.
+  (let [t (tissue-named "Adipose-Tissue")
+        un (first (tissue/unobtained t))]
+    (is (= 1 (count (tissue/unobtained t))))
+    (is (= "23811521" (:pmid un)))
+    (is (= :numbers-not-in-abstract (:could-not-obtain un)))
+    (is (= :not-in-abstract (get-in t [:model :directional :per-direction-values])))
+    (is (nil? (tissue/directional-modulus t :along-septa))
+        "no direction may be answered, since none was measured")))

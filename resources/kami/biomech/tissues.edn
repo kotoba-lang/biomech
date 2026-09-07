@@ -77,10 +77,86 @@
    :tissue-type :bone
    :sub-type :cancellous
    :model {:type :linear-elastic
+           ;; UNCHANGED, AND THE REASON IS NOT THAT IT LOOKED RIGHT.
+           ;; Ohman-Magi 2021 reviewed the human vertebral trabecular
+           ;; literature and found reported elastic moduli spanning
+           ;; 0.1 to 976 MPa -- FOUR DECADES -- and concluded the spread is
+           ;; driven by testing protocol, not by biology: standardising the
+           ;; method cut the disagreement between studies from 400% to 10%.
+           ;; Morgan 2003 adds that there is, verbatim, "no universal
+           ;; modulus-density relationship for on-axis loading": tibial
+           ;; specimens are stiffer than vertebral ones at the same density,
+           ;; by as much as 50%.
+           ;;
+           ;; So 5.0e8 sits inside the measured span, ABOVE both healthy
+           ;; superior-inferior means the review names (75 +/- 32 MPa and
+           ;; 430 +/- 130 MPa), inside the SD band of the higher one only, and
+           ;; ABOVE the 291-319 MPa band that survives once testing is
+           ;; standardised. It was not moved down to that band because the
+           ;; review is VERTEBRA-ONLY and this entry is not: Morgan measured
+           ;; tibia, trochanter and femoral neck as significantly stiffer than
+           ;; vertebra at equal density, so a generic cancellous entry has no
+           ;; business adopting a vertebral figure. Every candidate replacement
+           ;; was either a flattened table cell that could not be attributed or
+           ;; arithmetic of mine on the review's regression. Neither is a read
+           ;; number.
            :youngs-modulus 5.0e8
+           ;; The full span of reported values in the review, vertebral.
+           :youngs-modulus-range [1.0e5 9.76e8]
+           ;; What survives when the testing protocol is held constant.
+           :youngs-modulus-standardised-range [2.91e8 3.19e8]
+           ;; NOT SOURCED. No source read here measured a Poisson's ratio for
+           ;; trabecular bone.
            :poissons-ratio 0.30
-           :density 800}
-   :source "representative; cancellous (trabecular) bone E in [0.1,1] GPa, density approx 500-1000 kg/m^3"}
+           ;; NOT SOURCED, AND NOT CONTRADICTED EITHER -- A DIFFERENT QUANTITY.
+           ;; The review reports vertebral WET APPARENT DENSITY of
+           ;; 0.09-0.35 g/cm^3, i.e. 90-350 kg/m^3, which is defatted bone mass
+           ;; per bulk volume. The density a dynamics solver wants is the mass
+           ;; of the marrow-filled continuum, which is several times larger.
+           ;; The two are not comparable and 800 is left alone; it is recorded
+           ;; here so that nobody "corrects" one into the other.
+           :density 800
+           :apparent-density-range-vertebral-kg-m3 [90.0 350.0]
+           :modulus-density-model
+           {:basis "Ohman-Magi 2021's own proposed regression for vertebral trabecular bone, read from the full text."
+            :form "E [MPa] = 4730 * rho_wet^1.56, rho_wet in g/cm^3"
+            :note "CARRIED AS A FORMULA AND DELIBERATELY NOT EVALUATED. Evaluating it at some chosen density would produce a number that appears in no paper, which is exactly what this entry is refusing to do. It is here because it is the review's answer to the question a single scalar cannot answer: the modulus follows the density, and this entry's density field is a different quantity from the rho_wet the formula takes."}
+           :sites
+           {:basis "Morgan 2003: 142 human trabecular specimens from 61 cadavers (mean age 67 +/- 15), vertebra n=61, proximal tibia n=31, femoral greater trochanter n=23, femoral neck n=27, on-axis moduli with protocols that minimised end-artefact error."
+            :ordering "At a given density: tibia stiffer than vertebra and than femoral neck; trochanter stiffer than vertebra."
+            :inter-site-difference-max-fraction 0.50
+            :error-from-ignoring-site-max-fraction 0.65
+            :power-law-exponent-range [1.49 2.18]
+            :per-site-values :not-in-abstract
+            :note "The exponents did NOT differ across site (p>0.08); the leading coefficients did (p<0.02). And, verbatim, \"Tissue moduli computed using methods that account for inter-site architectural variations did not differ across site\" -- so the site dependence is architecture, not a different material. That is the same tissue-versus-apparent distinction the cortical entry carries from Rho 1993."}
+           :healthy-superior-inferior-means
+           {:basis "Ohman-Magi 2021 discussion, naming two studies of healthy vertebral bone tested in the superior-inferior direction. Read from the full text, in prose, NOT from a table."
+            :lower {:youngs-modulus 7.5e7 :sd 3.2e7}
+            :upper {:youngs-modulus 4.3e8 :sd 1.3e8}
+            :note "A 5.7x disagreement between two studies of the same tissue in the same direction. The carried scalar is above both means."}
+           :directional
+           {:basis "The review's Table 2 does contain vertebral moduli separated by superior-inferior, anteroposterior and mediolateral direction."
+            :per-direction-values :not-attributable-from-flattened-table
+            :note "REFUSED FOR A MECHANICAL REASON, NOT AN EDITORIAL ONE. The full text was retrieved as JATS XML and the table cells arrive as a flat token stream: consecutive rows run together, so a value and the direction label beside it cannot be paired with confidence. Guessing the pairing would produce numbers that look authoritative and are attributed by position rather than by reading. So this entry states the anisotropy exists in the source and carries none of it."}}
+   :source "Ohman-Magi C et al. 2021 JOR Spine 4(4):e1176 (PMID 35005442, PMC8717096, FULL TEXT read via the Europe PMC fullTextXML endpoint): human vertebral trabecular elastic modulus reported between 0.1 and 976 MPa, wet apparent density 0.09-0.35 g/cm^3; healthy superior-inferior means of 75 +/- 32 and 430 +/- 130 MPa; 291-319 MPa once testing is standardised. + Morgan EF, Bayraktar HH & Keaveny TM 2003 J Biomech 36(7):897-904 (PMID 12757797): no universal modulus-density relationship; site differences up to 50%. THE SCALAR 5.0e8 IS UNCHANGED AND IS NOBODY'S MEASUREMENT. It is above both named healthy means and above the standardised band, and it was NOT lowered to that band because the band is vertebra-only while this entry is generic and Morgan shows tibia, trochanter and femoral neck are significantly stiffer than vertebra at equal density. SPECIMEN: human cadaveric, vertebra (Ohman-Magi) and vertebra / proximal tibia / greater trochanter / femoral neck (Morgan). DIRECTION: the scalar is ON-AXIS (superior-inferior for vertebral specimens). The direction-resolved values exist in the review's Table 2 and are NOT carried -- see :directional. RATE: quasi-static compression throughout; nothing here describes impact. DENSITY: the 800 kg/m^3 carried here is NOT CONTRADICTED BY, BUT IS A DIFFERENT QUANTITY FROM, the review's vertebral wet apparent density of 90-350 kg/m^3. Apparent density is defatted bone mass per bulk volume; the density a dynamics solver wants is the mass of the marrow-filled continuum, which is several times larger. The band is carried in :apparent-density-range-vertebral-kg-m3 so that nobody 'corrects' one into the other. THE HONEST SUMMARY IS THAT THIS TISSUE HAS NO DEFENSIBLE SINGLE MODULUS, and the entry now carries the spans that say so instead of a bare number that does not."
+   :provenance
+   {:scalar :unsourced-but-bounded
+    :sources
+    [{:citation "Ohman-Magi C, Holub O, Wu D, Hall RM, Persson C. Density and mechanical properties of vertebral trabecular bone-A review. JOR Spine. 2021;4(4):e1176."
+      :doi "10.1002/jsp2.1176"
+      :pmid "35005442"
+      :pmcid "PMC8717096"
+      :obtained :full-text
+      :retrieved-via :europe-pmc-rest
+      :read "Results, verbatim: \"A large variation in reported vertebral trabecular bone densities, mechanical properties, and relationships between the two was found, as exemplified by values varying between 0.09 and 0.35 g/cm3 for the wet apparent density and from 0.1 to 976 MPa for the elastic modulus. The differences were found to reflect variations in experimental and analytical processes that had been used, including testing protocol and specimen geometry. The variability in the data decreased in studies where bone tissue testing occurred in a standardized manner (eg, the reported differences in average elastic modulus decreased from 400% to 10%).\" Discussion, verbatim: \"reported average compressive elastic modulus values varied between 75 +/- 32 MPa and 430 +/- 130 MPa in healthy bone tested in the superior-inferior direction.\" And, verbatim: \"In the case of compressive elastic modulus, it was possible to see that the range of average modulus decreased drastically, from 83-319 MPa to 291-319 MPa\". And the proposed regression, verbatim: \"E = 4730 x rho wet 1.56\"."
+      :caveat "A REVIEW, NOT A PRIMARY MEASUREMENT, AND IT IS VERTEBRA-ONLY. Every number above is the review's synthesis of other people's studies, so this entry cites it for a SPREAD and for a methodological conclusion, not for a value to adopt. Its own stated limitation on the proposed models is that \"the studies they are based on all come from the same group of authors\". This is the first entry in the file marked :obtained :full-text; the abstract alone would have given the 0.1-976 MPa span and none of the standardised band, the two named means, or the regression."}
+     {:citation "Morgan EF, Bayraktar HH, Keaveny TM. Trabecular bone modulus-density relationships depend on anatomic site. J Biomech. 2003;36(7):897-904."
+      :doi "10.1016/s0021-9290(03)00071-x"
+      :pmid "12757797"
+      :obtained :abstract
+      :retrieved-via :europe-pmc-rest
+      :read "Specimens, verbatim: \"on-axis elastic moduli and apparent densities were measured for 142 specimens of human trabecular bone from the vertebra (n=61), proximal tibia (n=31), femoral greater trochanter (n=23), and femoral neck (n=27). Specimens were obtained from 61 cadavers (mean+/-SD age=67+/-15 years).\" Result, verbatim: \"The inter-site differences were among the leading coefficients (p<0.02), but not the exponents (p>0.08), which ranged 1.49-2.18. At a given density, specimens from the tibia had higher moduli than those from the vertebra (p=0.01) and femoral neck (p=0.002); those from the trochanter had higher moduli than the vertebra (p=0.02). These differences could be as large as almost 50%, and errors in predicted values of modulus increased by up to 65% when site-dependence was ignored.\" Conclusion, verbatim: \"These results indicate that there is no universal modulus-density relationship for on-axis loading.\" And, verbatim: \"Tissue moduli computed using methods that account for inter-site architectural variations did not differ across site (p>0.15), suggesting that the site-specificity in apparent modulus-density relationships may be attributed to differences in architecture.\""
+      :caveat "IT PUBLISHES EXPONENTS AND SIGNIFICANCE AND NOT ONE ABSOLUTE MODULUS, so it cannot supply a scalar. What it does supply is the reason a generic cancellous scalar is the wrong shape of answer: the modulus-density relation differs by site, and ignoring that inflates prediction error by up to 65%. Its closing observation matters for how this file is read as a whole -- the TISSUE modulus does not differ across site, only the APPARENT one does, so the site dependence carried here is architecture and not a different material."}]}}
 
   {:name "Skeletal-Muscle"
    :tissue-type :muscle

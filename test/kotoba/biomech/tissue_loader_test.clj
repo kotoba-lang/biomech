@@ -617,3 +617,77 @@
       (is (= 3.411e10 (get-in t [:model :directional
                                  :mean-tibial-stiffness-coefficient])))
       (is (nil? (get-in t [:model :directional :youngs-modulus]))))))
+
+(deftest cancellous-scalar-is-bounded-by-a-four-decade-spread-test
+  ;; THE HONEST ANSWER FOR THIS TISSUE IS A SPREAD, AND THE ENTRY CARRIES IT.
+  ;; A review of the human vertebral trabecular literature found moduli from
+  ;; 0.1 to 976 MPa and concluded the spread is testing protocol, not biology.
+  ;; The scalar therefore states where it sits relative to what was measured
+  ;; rather than claiming to be one of the measurements.
+  (let [t (tissue-named "Cancellous-Bone")
+        [lo hi] (get-in t [:model :youngs-modulus-range])
+        [slo shi] (get-in t [:model :youngs-modulus-standardised-range])
+        mean #(get-in t [:model :healthy-superior-inferior-means % :youngs-modulus])]
+    (is (= 5.0e8 (tissue/youngs-modulus t)))
+    (is (= :unsourced-but-bounded (tissue/scalar-provenance t)))
+    (is (= [1.0e5 9.76e8] [lo hi]))
+    (testing "the reported span really is about four decades wide"
+      (is (> (/ hi lo) 9000.0)))
+    (testing "the standardised band is inside the raw span and far narrower"
+      (is (and (< lo slo) (< shi hi)))
+      (is (< (/ shi slo) 1.2)))
+    (testing "and the scalar sits ABOVE both named healthy means and above the
+              standardised band -- the entry must not claim it is typical"
+      (is (> (tissue/youngs-modulus t) (mean :lower)))
+      (is (> (tissue/youngs-modulus t) (mean :upper)))
+      (is (> (tissue/youngs-modulus t) shi)))
+    (testing "the two named studies of the same tissue disagree by ~5.7x"
+      (is (< 5.6 (/ (mean :upper) (mean :lower)) 5.8)))))
+
+(deftest cancellous-direction-is-refused-because-the-table-could-not-be-read-test
+  ;; A REFUSAL WITH A MECHANICAL CAUSE, NOT AN EDITORIAL ONE. The full text was
+  ;; retrieved as JATS XML and its table cells arrive as a flat token stream, so
+  ;; a value and the direction label beside it cannot be paired with confidence.
+  ;; That is a THIRD failure mode, distinct from "no abstract" and from "numbers
+  ;; not in the abstract", and it gets its own marker for the same reason.
+  (let [t (tissue-named "Cancellous-Bone")
+        review (first (filter #(= "35005442" (:pmid %)) (tissue/sources t)))]
+    (is (= :not-attributable-from-flattened-table
+           (get-in t [:model :directional :per-direction-values])))
+    (doseq [dir [:superior-inferior :anteroposterior :mediolateral]]
+      (is (nil? (tissue/directional-modulus t dir))))
+    (testing "the review is the file's only :full-text source and says so"
+      (is (= :full-text (:obtained review)))
+      (is (= "PMC8717096" (:pmcid review)))
+      (is (= 1 (count (filter #(= :full-text (:obtained %))
+                              (mapcat tissue/sources (loader/presets)))))))
+    (testing "the modulus-density regression is carried as a formula, unevaluated"
+      (let [m (get-in t [:model :modulus-density-model])]
+        (is (string? (:form m)))
+        (is (re-find #"4730" (:form m)))
+        (is (nil? (:youngs-modulus m))
+            "evaluating it would produce a number that appears in no paper")))))
+
+(deftest cancellous-density-is-a-different-quantity-not-a-disagreement-test
+  ;; THE TRAP THIS TEST EXISTS FOR. The review reports vertebral wet apparent
+  ;; density of 90-350 kg/m^3 and this entry carries 800. That looks like a
+  ;; contradiction and is not: apparent density is defatted bone mass per bulk
+  ;; volume, and a dynamics solver wants the mass of the marrow-filled
+  ;; continuum. Recording the band beside the scalar is what stops someone
+  ;; "correcting" one into the other.
+  (let [t (tissue-named "Cancellous-Bone")
+        [lo hi] (get-in t [:model :apparent-density-range-vertebral-kg-m3])]
+    (is (= 800 (tissue/density t)))
+    (is (= [90.0 350.0] [lo hi]))
+    (is (> (tissue/density t) hi)
+        "the two numbers genuinely do not overlap, which is why the entry
+         explains them rather than reconciling them")
+    ;; AND THE EXPLANATION MUST BE IN THE DATA, NOT IN AN EDN COMMENT.
+    ;; The first version of this assertion failed for exactly that reason: the
+    ;; reasoning was written as `;;` above the field, which edn/read-string
+    ;; strips, so no consumer of the loaded value would ever see it. Every
+    ;; comment in tissues.edn is invisible to the reader; only :source and the
+    ;; :provenance strings survive into the data a caller holds.
+    (is (re-find #"NOT CONTRADICTED BY, BUT IS A DIFFERENT QUANTITY FROM"
+                 (tissue/source t))
+        "the explanation must survive edn/read-string, not live in a comment")))

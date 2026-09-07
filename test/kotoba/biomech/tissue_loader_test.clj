@@ -30,8 +30,12 @@
         d  #(tissue/density (tissue/find-tissue ps %))]
     (is (= 1.7e10 (E "Cortical-Bone")))   (is (= 0.30 (nu "Cortical-Bone")))   (is (= 1900 (d "Cortical-Bone")))
     (is (= 5.0e8  (E "Cancellous-Bone"))) (is (= 0.30 (nu "Cancellous-Bone"))) (is (= 800  (d "Cancellous-Bone")))
-    (is (= 3.0e4  (E "Skeletal-Muscle"))) (is (= 0.45 (nu "Skeletal-Muscle"))) (is (= 1060 (d "Skeletal-Muscle")))
-    (is (= 1.0e4  (tissue/shear-modulus (tissue/find-tissue ps "Skeletal-Muscle"))))
+    ;; MUSCLE'S MODULI ARE NO LONGER LEGACY. 1.0e4 cited nobody and is 1.7x
+    ;; Koo's measured SLACK shear modulus, i.e. a stretched muscle sitting in a
+    ;; field callers read as muscle at rest. E follows the entry's own
+    ;; long-standing 3G convention. nu and density stay legacy.
+    (is (= 1.74e4 (E "Skeletal-Muscle"))) (is (= 0.45 (nu "Skeletal-Muscle"))) (is (= 1060 (d "Skeletal-Muscle")))
+    (is (= 5.8e3  (tissue/shear-modulus (tissue/find-tissue ps "Skeletal-Muscle"))))
     ;; SKIN'S MODULUS IS NO LONGER LEGACY. 1.0e5 cited nobody and sits below
     ;; every quantity read for human skin; 1.18e6 is Ni Annaidh's measured
     ;; initial slope. nu and density are still the legacy values.
@@ -472,3 +476,46 @@
                    (get-in t [:model :preconditioning :note])))
       (is (re-find #"UPPER BOUND"
                    (get-in t [:model :preconditioning :note]))))))
+
+(deftest muscle-shear-modulus-is-the-slack-value-and-the-slope-is-carried-test
+  ;; A PASSIVE MUSCLE MODULUS IS A BOUNDARY CONDITION, NOT A MATERIAL CONSTANT.
+  ;; Koo's whole result is that the modulus rises exponentially once the joint
+  ;; passes the slack angle, so the entry carries the slack value AND the angle
+  ;; it holds at AND the rate of departure from it. Carrying the scalar alone
+  ;; would be carrying the least informative third of the measurement.
+  (let [t (tissue-named "Skeletal-Muscle")
+        ps #(get-in t [:model :passive-stretch %])]
+    (is (= 5.8e3 (tissue/shear-modulus t)))
+    (is (= (ps :slack-shear-modulus) (tissue/shear-modulus t))
+        "the scalar must BE the slack entry, not a value near it")
+    (is (= 1.9e3   (get-in t [:model :shear-modulus-sd])))
+    (is (= 10.9    (ps :slack-angle-deg)))
+    (is (= 6.3     (ps :slack-angle-sd-deg)))
+    (is (= 0.0347  (ps :elasticity-rate-per-deg)))
+    (is (= 0.0082  (ps :elasticity-rate-sd-per-deg)))
+    (testing "the slack angle's SD is more than half its mean, which is why a
+              single joint-angle-free modulus cannot be a material constant"
+      (is (> (ps :slack-angle-sd-deg) (* 0.5 (ps :slack-angle-deg)))))
+    (testing "and E remains the entry's declared 3G convention, now on the new G"
+      (is (= 1.74e4 (tissue/youngs-modulus t)))
+      (is (< (abs (- (tissue/youngs-modulus t)
+                     (* 3.0 (tissue/shear-modulus t))))
+             1.0)))
+    (is (= :sourced (tissue/scalar-provenance t)))))
+
+(deftest muscle-direction-is-explicitly-uncertified-not-assumed-isotropic-test
+  ;; Muscle is transversely isotropic, Gennisson confirms the anisotropy is
+  ;; measurable, and NEITHER abstract gives a value -- Koo's does not even state
+  ;; the probe orientation. So the entry marks the direction as uncertified.
+  ;; "We did not read which shear modulus this is" and "this tissue is
+  ;; isotropic" are different claims and only one of them is true.
+  (let [t (tissue-named "Skeletal-Muscle")]
+    (is (= :not-in-abstract
+           (get-in t [:model :directional :per-direction-values])))
+    (is (= :not-stated-in-abstract
+           (get-in t [:model :directional :probe-orientation])))
+    (doseq [dir [:along-fibre :cross-fibre :axial]]
+      (is (nil? (tissue/directional-modulus t dir))))
+    (let [un (first (tissue/unobtained t))]
+      (is (= "20420970" (:pmid un)))
+      (is (= :numbers-not-in-abstract (:could-not-obtain un))))))

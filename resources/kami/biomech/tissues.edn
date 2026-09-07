@@ -20,11 +20,65 @@
   {:name "Skeletal-Muscle"
    :tissue-type :muscle
    :model {:type :viscoelastic
-           :shear-modulus 1.0e4
-           :youngs-modulus 3.0e4
+           ;; 1.0e4 -> 5.8e3. THE OLD VALUE DESCRIBED A STRETCHED MUSCLE AND
+           ;; DID NOT SAY SO. Koo 2014 measured resting human tibialis anterior
+           ;; across the ankle's range in 20 healthy subjects and fitted a
+           ;; piecewise exponential: the muscle is SLACK up to 10.9 +/- 6.3
+           ;; degrees, where its shear elastic modulus is 5.8 +/- 1.9 kPa, and
+           ;; stiffens exponentially beyond that at 0.0347 +/- 0.0082 per
+           ;; degree. The old 10 kPa is 1.7x the slack value -- not wrong for
+           ;; muscle, but a number for a muscle already being stretched, carried
+           ;; in a field a caller reads as "passive muscle at rest".
+           :shear-modulus 5.8e3
+           :shear-modulus-sd 1.9e3
+           ;; 3.0e4 -> 1.74e4. THE ENTRY ALWAYS SAID THIS FIELD IS 3G AND NOT A
+           ;; MEASUREMENT ("effective E shown is 3G for isotropic reference
+           ;; only"); the convention is kept and the arithmetic follows the new
+           ;; G. Note that muscle is TRANSVERSELY ISOTROPIC, so E = 3G is an
+           ;; isotropic identity applied to a tissue that is not isotropic -- it
+           ;; is a reference figure for a solver that demands one, and the
+           ;; original entry was right to label it that way.
+           :youngs-modulus 1.74e4
+           ;; NOT SOURCED, AND KNOWN TO BE WRONG IN A STATED DIRECTION. Muscle
+           ;; is near-incompressible, nu about 0.49; 0.45 is a solver
+           ;; convenience inherited from the uncited era. It is left because
+           ;; changing it would alter the fea bridge's bulk modulus without any
+           ;; source read here to justify a specific replacement.
            :poissons-ratio 0.45
-           :density 1060}
-   :source "representative; passive skeletal muscle shear modulus approx 10-50 kPa, near-incompressible (nu approx 0.49 in vivo); effective E shown is 3G for isotropic reference only"}
+           ;; NOT SOURCED.
+           :density 1060
+           :passive-stretch
+           {:basis "Koo 2014, resting human tibialis anterior, 20 healthy subjects, ankle from 50 degrees plantarflexion to 15 degrees dorsiflexion in 5-degree steps, two cycles, shear wave elastography. A piecewise exponential was fitted with three parameters; the ABSTRACT NAMES THE PARAMETERS AND DOES NOT PRINT THE EQUATION, so they are carried and not evaluated here."
+            :slack-angle-deg 10.9
+            :slack-angle-sd-deg 6.3
+            :slack-shear-modulus 5.8e3
+            :slack-shear-modulus-sd 1.9e3
+            :elasticity-rate-per-deg 0.0347
+            :elasticity-rate-sd-per-deg 0.0082
+            :note "If the form is G = G_slack * exp(k * delta-theta) -- which the abstract does not state -- the retired 1.0e4 would sit about 16 degrees of dorsiflexion past slack. That inference is written here and is NOT carried as a value anywhere in :model."}
+           :directional
+           {:basis "Gennisson 2010 characterised in vivo human brachialis with supersonic shear imaging and estimated anisotropy by tilting the probe relative to the fibre direction. The abstract reports the METHOD and no number."
+            :per-direction-values :not-in-abstract
+            :probe-orientation :not-stated-in-abstract
+            :note "Koo's abstract does not say how the probe was oriented relative to the fascicles. Shear wave elastography of muscle is conventionally done with the probe aligned to the fibres, but that is convention and was not read, so this entry cannot certify which shear modulus 5.8 kPa is."}}
+   :source "Koo TK et al. 2014 Clin Biomech (Bristol, Avon) 29(1):33-39 (PMID 24295566): slack shear elastic modulus 5.8 +/- 1.9 kPa at a slack angle of 10.9 +/- 6.3 degrees, stiffening at 0.0347 +/- 0.0082 per degree beyond it. SPECIMEN: resting human tibialis anterior, IN VIVO, 20 healthy subjects. LOADING: passive joint rotation only -- no contraction, no external load. RATE: quasi-static, 5-degree steps over two cycles; this says nothing about a muscle under impact or during contraction. DIRECTION: NOT CERTIFIED. Muscle is transversely isotropic and Gennisson 2010 confirms the anisotropy is measurable, but neither abstract publishes a value and Koo's does not state the probe orientation. CHANGED HERE: :shear-modulus 1.0e4 -> 5.8e3, because 1.0e4 cited nobody and corresponds to a muscle already stretched past slack; :youngs-modulus 3.0e4 -> 1.74e4, following this entry's own long-standing convention that the E field is 3G and not a measurement."
+   :provenance
+   {:scalar :sourced
+    :sources
+    [{:citation "Koo TK, Guo JY, Cohen JH, Parker KJ. Quantifying the passive stretching response of human tibialis anterior muscle using shear wave elastography. Clin Biomech (Bristol, Avon). 2014;29(1):33-39."
+      :doi "10.1016/j.clinbiomech.2013.11.009"
+      :pmid "24295566"
+      :obtained :abstract
+      :retrieved-via :europe-pmc-rest
+      :read "Verbatim: \"Elasticity measurements were made at resting tibialis anterior of 20 healthy subjects with the ankle positioned from 50 degrees plantarflexion to up to 15 degrees dorsiflexion at every 5 degrees for two cycles. Elasticity-angle data was curve-fitted by optimizing slack angle, slack elasticity, and rate of increase in elasticity within a piecewise exponential model.\" And the numbers, verbatim: \"Mean (SD) of slack angle, slack elasticity, and rate of increase in elasticity were 10.9 degrees (6.3 degrees), 5.8 (1.9) kPa, and 0.0347 (0.0082) respectively. Intraclass correlation coefficients of each parameter were 0.852, 0.942, and 0.936 respectively, indicating excellent test-retest reliability.\" And the basis for reading elasticity as force, verbatim: \"Utilizing an animal model, we demonstrated that shear elastic modulus measured by supersonic shear wave elastography increases linearly with passive muscle force.\""
+      :caveat "5.8 kPa IS THE SLACK VALUE AND THE TISSUE LEAVES IT IMMEDIATELY. The whole content of the paper is that the modulus rises exponentially once the joint passes the slack angle, so a single passive shear modulus is a boundary condition rather than a material property -- and the slack angle itself has an SD of 6.3 degrees on a mean of 10.9, so different subjects leave slack at very different joint positions. The linear elasticity-to-force relation quoted above was established in an ANIMAL model, not in these human subjects."}]
+    :unobtained
+    [{:citation "Gennisson JL, Deffieux T, Mace E, Montaldo G, Fink M, Tanter M. Viscoelastic and anisotropic mechanical properties of in vivo muscle tissue assessed by supersonic shear imaging. Ultrasound Med Biol. 2010;36(5):789-801."
+      :doi "10.1016/j.ultrasmedbio.2010.02.013"
+      :pmid "20420970"
+      :could-not-obtain :numbers-not-in-abstract
+      :retrieved-via :europe-pmc-rest
+      :note "This is the source that would quantify the anisotropy. Its abstract was read in full and is a method description with no result values: it states that \"Anisotropic properties are also estimated by tilting the probe head with respects to the main muscular fibers direction\" and that \"shear modulus and shear viscosity are quantitatively assessed assuming the viscoelastic Voigt's model\", and prints neither. It is recorded because it establishes on a published authority that the anisotropy is real and measurable -- which is why this entry marks its direction as uncertified instead of assuming isotropy. NO NUMBER IN THIS ENTRY COMES FROM GENNISSON."}]}}
 
   {:name "Skin"
    :tissue-type :skin

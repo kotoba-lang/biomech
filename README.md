@@ -593,7 +593,7 @@ not under it. The claim in the table above says so, because the test made it.
 |---|---|
 | Role | capability |
 | Phase | 1 + 2 — tissue domain + closed-form sim + 3 solver backends |
-| Tests | 65 tests, 313 assertions across 8 namespaces, all green (measured 2026-09-07, `clojure -X:test`, exit 0) |
+| Tests | 107 tests, 643 assertions across 8 namespaces, all green (measured 2026-09-07, `clojure -X:test`, exit 0) |
 | Lint | 0 errors / 0 warnings (`clojure -M:lint --fail-level error`) |
 | Backends | fea (beam2 FEM) · kami-vehicle (mass-spring primitives) · kami-engine-cfd (LBM CFD) |
 
@@ -603,9 +603,10 @@ not under it. The claim in the table above says so, because the test made it.
 
 Biological tissue material-property accessors (`youngs-modulus` /
 `shear-modulus` / `poissons-ratio` / `density` / `source`) over a plain-map
-tissue record. Thirteen tissues are in `resources/kami/biomech/tissues.edn`. Three of them
-carry read citations; see [Which tissues are sourced](#which-tissues-are-sourced-and-which-are-only-plausible)
-below for the ones that do not.
+tissue record. Thirteen tissues are in `resources/kami/biomech/tissues.edn`, and
+**all thirteen now carry a read citation** — but only **nine** carry a scalar
+that a source actually reports. `scalar-provenance` tells you which you have;
+see [Which tissues are sourced](#which-tissues-are-sourced-and-which-are-only-plausible).
 
 ```clojure
 (require '[kotoba.biomech.tissue :as tissue]

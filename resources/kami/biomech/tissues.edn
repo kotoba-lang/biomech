@@ -457,7 +457,8 @@
            :density 1100}
    :source "Neumann 1992 J Biomech 25(10):1185-1194 (PMID 1400518): ALL \"overall\" tensile modulus 759 MPa (S.D. 336), i.e. 423-1095 MPa. The 5.0e8 Pa carried here sits inside that band and is unchanged. DIRECTION: along the fibre axis, in tension; a ligament loaded across its fibres is a different and much lower number this entry does not carry. RATE: ~1.0% strain per second (2.5 mm/s crosshead); ligament is rate-dependent and this does not describe an impact."
    :provenance
-   {:sources
+   {:scalar :unsourced-but-bounded
+    :sources
     [{:citation "Neumann P, Keller TS, Ekstrom L, Perry L, Hansson TH, Spengler DM. Mechanical properties of the human lumbar anterior longitudinal ligament. J Biomech. 1992;25(10):1185-1194."
       :doi "10.1016/0021-9290(92)90074-b"
       :pmid "1400518"
@@ -712,7 +713,8 @@
             :compression-anisotropy "NONE DETECTED. Iatridis 1998 tested axial and radial specimens in confined compression and found significant effects of degeneration BUT NOT ORIENTATION. So this tissue is about 22x anisotropic in tension and not measurably anisotropic in confined compression. One number is defensible for one of those and not the other."}}
    :source "Elliott & Setton 2001 J Biomech Eng 123(3):256-263 (PMID 11476369, tension, anisotropy) + Iatridis 1998 J Biomech 31(6):535-544 (PMID 9755038, confined compression). DIRECTION: the scalar :youngs-modulus is the AXIAL tensile linear-region modulus, 0.8 +/- 0.9 MPa. The circumferential outer modulus is 17.4 +/- 14.3 MPa, about 22x larger, and is in :directional. RATE: both studies are slow-rate quasi-static equilibrium protocols, not impact."
    :provenance
-   {:sources
+   {:scalar :sourced
+    :sources
     [{:citation "Elliott DM, Setton LA. Anisotropic and inhomogeneous tensile behavior of the human anulus fibrosus: experimental measurement and material model predictions. J Biomech Eng. 2001;123(3):256-263."
       :doi "10.1115/1.1374202"
       :pmid "11476369"
@@ -773,7 +775,8 @@
            }
    :source "Iatridis 1997 J Biomech 30(10):1005-1013 (PMID 9391867): |G*| 7-20 kPa, loss angle 23-30 deg, over 1-100 rad/s. RATE IS THE WHOLE POINT: this tissue is fluid-like in relaxation and solid-like only dynamically, so a shear modulus without a frequency is meaningless. + Johannessen & Elliott 2005 Spine 30(24):E724-E729 (PMID 16371889): effective aggregate modulus 1.01 +/- 0.43 MPa nondegenerate, swelling stress 0.138 +/- 0.029 MPa. NO Young's modulus and NO Poisson's ratio are carried, deliberately: see the :model comments."
    :provenance
-   {:sources
+   {:scalar :sourced
+    :sources
     [{:citation "Iatridis JC, Setton LA, Weidenbaum M, Mow VC. The viscoelastic behavior of the non-degenerate human lumbar nucleus pulposus in shear. J Biomech. 1997;30(10):1005-1013."
       :doi "10.1016/s0021-9290(97)00069-9"
       :pmid "9391867"

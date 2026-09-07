@@ -179,6 +179,32 @@
   nobody looked at."
   [t] (vec (get-in t [:provenance :unobtained])))
 
+(defn contributing-sources
+  "The subset of `sources` that actually supplies a number this entry carries.
+
+  A source may be read, quoted, and correct, and still back nothing here: the
+  liver entry cites Karimi & Shojaei on Glisson's CAPSULE, and the arterial wall
+  cites Holzapfel's layer ORDERING, and neither supplies a scalar. Those carry
+  :supplies-number? false. The key is absent on ordinary sources, so absence
+  means true — a source has to opt OUT of counting, which is the safe default
+  when someone adds an entry and forgets the key.
+
+  This is the predicate behind the repo's cited count. Counting :sources
+  directly would let an entry look sourced on the strength of a paper that
+  measured a different tissue."
+  [t]
+  (vec (remove #(false? (:supplies-number? %)) (sources t))))
+
+(defn cited?
+  "True if at least one source was read that supplies a number this entry
+  carries.
+
+  DELIBERATELY NOT THE SAME QUESTION AS `is this value verified`. See
+  scalar-provenance: an entry can be cited and still carry a scalar no source
+  reports, bounded by sources that do. Both counts are worth having and they are
+  different numbers."
+  [t] (boolean (seq (contributing-sources t))))
+
 (defn scalar-provenance
   "How the entry's SCALAR stiffness relates to the sources actually read, or
   nil if the entry has never been through provenance work.

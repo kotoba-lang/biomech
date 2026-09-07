@@ -691,3 +691,108 @@
     (is (re-find #"NOT CONTRADICTED BY, BUT IS A DIFFERENT QUANTITY FROM"
                  (tissue/source t))
         "the explanation must survive edn/read-string, not live in a comment")))
+
+;; ---------------------------------------------------------------------------
+;; CATALOGUE-WIDE INVARIANTS AND THE TWO COUNTS.
+;;
+;; The README states how many of the thirteen entries are cited. That number is
+;; RECOMPUTED here from the data rather than being maintained by hand, and the
+;; assertions below are what make it mean something: without them "cited" would
+;; be satisfied by any map with a :sources key in it.
+;; ---------------------------------------------------------------------------
+
+(deftest every-entry-is-cited-and-the-count-is-recomputed-test
+  (let [ps (loader/presets)
+        cited (filter tissue/cited? ps)
+        sourced-scalar (filter #(= :sourced (tissue/scalar-provenance %)) ps)
+        bounded-scalar (filter #(= :unsourced-but-bounded
+                                   (tissue/scalar-provenance %)) ps)]
+    (is (= 13 (count ps)))
+    (is (= 13 (count cited))
+        (str "entries with no number-supplying source: "
+             (pr-str (map :name (remove tissue/cited? ps)))))
+    (testing "and the second count, which is a different question"
+      (is (= 9 (count sourced-scalar)))
+      (is (= 4 (count bounded-scalar)))
+      (is (= 13 (+ (count sourced-scalar) (count bounded-scalar)))
+          "every entry must answer :scalar; nil is not a third grade")
+      (is (= ["Cortical-Bone" "Cancellous-Bone" "Cartilage" "Ligament"]
+             (map :name bounded-scalar))
+          "the four scalars nobody measured, named so the list cannot drift"))))
+
+(deftest no-entry-still-says-representative-test
+  ;; THE RATCHET. Every uncited entry in this file opened with
+  ;; "representative; ..." and no author, year or DOI. If one ever says that
+  ;; again -- a new tissue added without provenance, or an entry rolled back --
+  ;; this fails by name. It is the cheapest possible guard against the
+  ;; condition the whole exercise removed.
+  (let [ps (loader/presets)
+        offenders (filter #(re-find #"^representative" (or (tissue/source %) ""))
+                          ps)]
+    (is (= [] (map :name offenders))
+        "a :source beginning \"representative\" is an entry that cites nobody")))
+
+(deftest every-source-declares-what-it-is-and-how-it-was-reached-test
+  ;; TYPES, NOT PRESENCE. edn/read-string will hand back a PersistentList for
+  ;; (str "..." "...") and it prints in a listing exactly like a string, so
+  ;; `some?` on these fields would pass on a value no consumer can use.
+  (let [ps (loader/presets)
+        bad (atom [])]
+    (doseq [t ps]
+      (when-not (contains? #{:sourced :unsourced-but-bounded}
+                           (tissue/scalar-provenance t))
+        (swap! bad conj [(:name t) :bad-scalar-grade (tissue/scalar-provenance t)]))
+      (doseq [s (tissue/sources t)]
+        (when-not (string? (:citation s)) (swap! bad conj [(:name t) :citation (type (:citation s))]))
+        (when-not (string? (:read s))     (swap! bad conj [(:name t) :read (type (:read s))]))
+        (when-not (or (string? (:doi s)) (string? (:pmid s)))
+          (swap! bad conj [(:name t) :no-doi-or-pmid (:citation s)]))
+        (when-not (contains? #{:abstract :full-text} (:obtained s))
+          (swap! bad conj [(:name t) :obtained (:obtained s)]))
+        ;; A source that supplies a number must quote one.
+        (when (and (not (false? (:supplies-number? s)))
+                   (not (re-find #"\d" (str (:read s)))))
+          (swap! bad conj [(:name t) :read-has-no-number (:citation s)])))
+      (doseq [u (tissue/unobtained t)]
+        (when-not (contains? #{:numbers-not-in-abstract
+                               :no-abstract-published
+                               :not-attributable-from-flattened-table}
+                             (:could-not-obtain u))
+          (swap! bad conj [(:name t) :could-not-obtain (:could-not-obtain u)]))
+        (when-not (string? (:note u))
+          (swap! bad conj [(:name t) :unobtained-note (type (:note u))]))))
+    (is (= [] @bad) (str "provenance shape violations: " (pr-str @bad)))
+    (is (<= 20 (count (mapcat tissue/sources ps)))
+        "and the walk must have had a catalogue's worth of sources to walk")))
+
+(deftest refusals-are-recorded-rather-than-tissues-being-skipped-test
+  ;; A SOUGHT-AND-UNOBTAINED SOURCE IS A RESULT. Six entries carry one, and the
+  ;; two reasons recorded there must stay distinct -- an unpublished abstract
+  ;; and an abstract without numbers are different facts about why a number is
+  ;; missing, and a reader deciding whether to chase the full text needs to know
+  ;; which.
+  ;;
+  ;; THE THIRD REFUSAL DELIBERATELY DOES NOT LIVE HERE, and the first version of
+  ;; this test asserted that it did and failed. :unobtained is about SOURCES
+  ;; that could not be obtained. The cancellous review WAS obtained, in full
+  ;; text; what could not be read was one table inside it. Recording that under
+  ;; :unobtained would have said the paper was unreachable, which is false. It
+  ;; is recorded at the field it affects instead, and is asserted there.
+  (let [ps (loader/presets)
+        all (mapcat tissue/unobtained ps)
+        by-reason (frequencies (map :could-not-obtain all))]
+    (is (= 7 (count all)))
+    (is (= 2 (count by-reason))
+        (str "distinct refusal reasons among unobtainable SOURCES: "
+             (pr-str by-reason)))
+    (is (= 1 (get by-reason :no-abstract-published))
+        "Reilly & Burstein 1975, checked in Europe PMC, PubMed efetch and Crossref")
+    (is (= 6 (get by-reason :numbers-not-in-abstract)))
+    (testing "and the third reason is attached to the field it affects"
+      (is (= :not-attributable-from-flattened-table
+             (get-in (tissue-named "Cancellous-Bone")
+                     [:model :directional :per-direction-values])))
+      (is (= :full-text
+             (:obtained (first (filter #(= "35005442" (:pmid %))
+                                       (tissue/sources (tissue-named "Cancellous-Bone"))))))
+          "the paper itself was obtained; only its table could not be read"))))

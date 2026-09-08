@@ -19,7 +19,7 @@
   the :source field states the range each representative value was picked
   from. Phase 2 wires :type tags to actual solver material models
   (fea linear-elastic, kami-vehicle soft-body, etc.)."
-  (:require [clojure.string :as str]))
+  (:require [kotoba.lang.text :as str]))
 
 (def tissue-types
   "Enumerated top-level tissue categories this domain models.
@@ -208,7 +208,7 @@
   "Look up a tissue by name in a presets collection (vector of tissue maps).
   Match is case-insensitive on :name. Returns the tissue map or nil."
   [presets name]
-  (let [needle (str/lower-case (str name))]
+  (let [needle (str/lower (str name))]
     (->> presets
          (filter tissue?)
-         (some #(when (= (str/lower-case (:name %)) needle) %)))))
+         (some #(when (= (str/lower (:name %)) needle) %)))))

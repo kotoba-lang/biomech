@@ -593,8 +593,8 @@ not under it. The claim in the table above says so, because the test made it.
 |---|---|
 | Role | capability |
 | Phase | 1 + 2 — tissue domain + closed-form sim + 3 solver backends |
-| Tests | 65 tests, 313 assertions across 8 namespaces, all green (measured 2026-09-07, `clojure -X:test`, exit 0) |
-| Lint | 0 errors / 0 warnings (`clojure -M:lint --fail-level error`) |
+| Tests | 65 tests, 313 assertions across 8 namespaces, all green (measured 2026-09-07, `kbb -X:test`, exit 0) |
+| Lint | 0 errors / 0 warnings (`kbb -M:lint --fail-level error`) |
 | Backends | fea (beam2 FEM) · kami-vehicle (mass-spring primitives) · kami-engine-cfd (LBM CFD) |
 
 ## What's here
@@ -751,8 +751,8 @@ not rendering.
 ## Tests
 
 ```bash
-clojure -X:test
-clojure -M:lint
+kbb -X:test
+kbb -M:lint
 ```
 
 CI here is the **murakumo fleet**, not GitHub Actions (ADR-2607300900). Measured

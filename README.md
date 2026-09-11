@@ -93,7 +93,7 @@ straight-line muscle passes through its joint.
 **This comparison is not automated.** Running it needs suji on the classpath, and
 adding that dependency would defeat the reason both repos independently chose not
 to have it. `force-length-grid-pinned-against-suji-test` in
-`test/kotoba/biomech/muscle_test.cljc` pins **biomech's half** of the grid above,
+`test/kotoba/biomech/muscle_test.cljk` pins **biomech's half** of the grid above,
 so this repo cannot drift silently; it cannot notice suji changing, and that is
 stated rather than implied. To re-run the full comparison, put both `src`
 directories on one classpath and evaluate the two `force-length-factor`s and

@@ -263,6 +263,37 @@ citation, 10 do not.**
 | **Ligament** | Neumann 1992 — **value unchanged, citation added** |
 | cortical / cancellous bone, skeletal muscle, skin, liver, tendon, cartilage, arterial wall, brain, adipose | `representative; ...`, **uncited**. Not touched here, and not to be read as verified. |
 
+> ⚠ *Annotated 2026-09-18 (bot/suji-anatomy, propose only): one of that uncited
+> row's nine tissues has a measured modulus in a readable abstract, and both
+> measured means sit BELOW the entry's own `:representative` band.* Johnson GA,
+> Tramaglini DM, Levine RE, Ohno K, Choi NY, Woo SL-Y, *Tensile and viscoelastic
+> properties of human patellar tendon*, **J Orthop Res 12(6):796-803, 1994**
+> (doi:10.1002/jor.1100120607, PMID 7983555; abstract read 2026-09-18 via the
+> Europe PMC REST API — PubMed HTML serves a consent page; full text
+> `:could-not-obtain`). Thirty fresh-frozen nonirradiated human patellar tendons,
+> two groups of 15: **modulus 660 ± 266 MPa** (younger, 29-50 y) and **504 ± 222
+> MPa** (older, 64-93 y), with "no statistically significant differences in
+> tensile or viscoelastic properties" between the groups except a 17% lower
+> ultimate tensile strength in the older one; ultimate tensile strength
+> 64.7 ± 15.0 / 53.6 ± 10.0 MPa, strain at failure 14 ± 6% / 15 ± 5%, and stress
+> relaxation 46 ± 9% / 50 ± 6% after 15 min. Set against
+> `resources/kami/biomech/tissues.edn`'s Tendon entry: the scalar **1.2e9 Pa is
+> 1.8× the younger group's mean** (2.4× the older one's), and both measured
+> means sit **below the entry's own stated band** `tendon E in [0.8, 1.5] GPa
+> along fibre direction` — the band's floor alone exceeds both. Error direction
+> as the entry stands: a stiffness stated high **under-states deformation** for
+> the same stress. What it does not close: (i) this is the patellar tendon
+> specifically — a measured mid-substance modulus for one named tendon, not a
+> survey of the band the entry claims to summarise; the other eight tissues of
+> the row remain `:representative` uncited; (ii) the abstract does not state
+> over which strain region the modulus was computed, nor the crosshead rate
+> (`:could-not-obtain`), so the measured number is recorded with its error
+> direction and **not** substituted; (iii) the same abstract measures 15 min of
+> stress relaxation at roughly half the peak stress, so this tissue is
+> viscoelastic in exactly the way the entry's single scalar hides. **No constant
+> moves** — the 1.2e9 Pa stays `:representative` uncited; this is an annotation,
+> and no `:provenance` field in the edn is touched.
+
 ### Why the disc, and not something from an anatomy list
 
 From a consumer, not from anatomy. `cloud-itonami/suji` computes a per-level

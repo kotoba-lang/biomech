@@ -293,6 +293,57 @@ citation, 10 do not.**
 > viscoelastic in exactly the way the entry's single scalar hides. **No constant
 > moves** — the 1.2e9 Pa stays `:representative` uncited; this is an annotation,
 > and no `:provenance` field in the edn is touched.
+> ⚠ *Annotated 2026-09-18 (bot/suji-anatomy, second tick of the day, propose
+> only): a second tissue of that uncited row now has a measured stiffness from
+> a readable abstract — and from the method the entry itself names.* The
+> Liver entry's `:source` reads "representative; liver E in [1,5] kPa per MR
+> elastography, near-incompressible" with no author, no year and no DOI. Two
+> measured liver-stiffness cohorts in healthy volunteers:
+>
+> 1. Mannelli L, Godfrey E, Graves MJ, Patterson AJ, Beddy P, Bowden D,
+>    Joubert I, Priest AN, Lomas DJ, *Magnetic resonance elastography:
+>    feasibility of liver stiffness measurements in healthy volunteers at 3T*,
+>    **Clinical Radiology 67(3):258-262, 2012**
+>    (doi:10.1016/j.crad.2011.08.022, PMID 22014555; abstract read 2026-09-18
+>    via the Europe PMC REST API — inEPMC=N, no PMC record, full text
+>    `:could-not-obtain`). Eleven healthy volunteers (mean age 35 ± 9 y), 3T
+>    MRE, 60 Hz pneumatic excitation, local-frequency-estimation inversion:
+>    **mean liver stiffness 2.3 ± 0.38 kPa (range 1.7-2.8)**. This is the
+>    measurement method the entry's own `:source` sentence names — MR
+>    elastography.
+> 2. Petzold G, Hofer J, Ellenrieder V, Neesse A, Kunsch S, *Liver Stiffness
+>    Measured by 2-Dimensional Shear Wave Elastography: Prospective Evaluation
+>    of Healthy Volunteers and Patients With Liver Cirrhosis*, **J Ultrasound
+>    Med 38(7):1769-1777, 2019** (doi:10.1002/jum.14866, PMID 30536601;
+>    abstract read 2026-09-18 via the Europe PMC REST API; full text
+>    `:could-not-obtain`). Sixty-eight healthy volunteers:
+>    **5.19 ± 1.03 kPa**, with 2.5th-97.5th percentiles 3.62-7.02 kPa across
+>    the 125 participants without liver disease — but this is **2D-SWE, a
+>    different technique from MRE**, so it can only say where a second
+>    in-vivo method's normal band sits, not tighten the MRE band.
+>
+> Set against the entry: the MRE mean 2.3 ± 0.38 kPa sits INSIDE the entry's
+> own [1,5] kPa band and 6.7× ABOVE the entry's scalar `:youngs-modulus`
+> 3.0e3 Pa. The two do not contradict: the MRE number is a **dynamic
+> shear-wave stiffness and the scalar is a quasi-static Young's modulus** —
+> different quantities, not equated here; the entry already carries this
+> tension between its own band sentence and its own scalar, and the
+> measurement anchors the band sentence, not the scalar. Error direction
+> kept: dynamic storage stiffness is the higher of the two, so reading the
+> 2.3 kPa as if it were E over-states the tissue's quasi-static stiffness by
+> a ratio the abstract does not separate (`:could-not-obtain` — no storage
+> vs loss split for liver in a healthy cohort is carried anywhere in this
+> repo). What it does not close: (i) n=11, one MRE paper, one 3T setting;
+> the [1,5] band stays a multi-study convention, no `:provenance` field is
+> installed and no value is substituted; (ii) the SWE cohort is a
+> technique-bridge at best, and 2D-SWE over-reads fibrotic change relative
+> to MRE in the general elastography literature (`:could-not-obtain` from
+> these two abstracts alone); (iii) neither abstract gives a frequency sweep
+> or a loss angle for healthy liver, so the dynamic/quasi-static split is
+> named and not quantified. **No constant moves** — the 3.0e3 Pa scalar
+> stays `:representative` uncited, the edn is untouched, and this annotation
+> joins the Tendon one above as the second tissue of the uncited row with a
+> measured anchor.
 
 ### Why the disc, and not something from an anatomy list
 

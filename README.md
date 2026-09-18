@@ -345,6 +345,45 @@ citation, 10 do not.**
 > joins the Tendon one above as the second tissue of the uncited row with a
 > measured anchor.
 
+> ⚠ *Annotated 2026-09-18 (bot/suji-anatomy, third tick of the day, propose
+> only): a third tissue of that uncited row meets a measured human modulus —
+> and the measurement sits on a different SCALE than the entry's band.* The
+> Cancellous-Bone entry's `:source` reads "representative; cancellous
+> (trabecular) bone E in [0.1,1] GPa, density approx 500-1000 kg/m^3" with
+> no author, no year and no DOI. Kuhn F, Clausing RJ, Stiller A, Fonseca
+> Ulloa CA, Foelsch C, Rickert M, Jahnke A, *Determination of E-modulus of
+> cancellous bone derived from human humeri and validation of plotted single
+> trabeculae: Development of a standardized humerus bone model*,
+> **J Orthop 33:48-54, 2022** (doi:10.1016/j.jor.2022.07.003, PMID 35855729;
+> abstract read 2026-09-18 via the Europe PMC REST API; full text
+> `:could-not-obtain`). 34 single trabeculae dissected from human proximal
+> humeral heads, two-point bending with CAD-measured transverse sections and
+> FEM reduction: **mean E-modulus 1678 MPa, range 829-3396 MPa**, stated as
+> "consistent with existing literature". Set against the entry, the mean
+> 1.678 GPa is **1.68× the band's ceiling** and **3.36× the entry's scalar
+> 5.0e8 Pa** — but this is NOT a contradiction, it is a scale mismatch the
+> entry's own wording invites: the measurement is a **tissue-level modulus
+> of one trabecula**, while the band summarises the **apparent modulus of
+> whole porous bone** — two quantities that share no number, and that the
+> word "trabecular" spans in this entry's sentence (the measured range's low
+> end, 0.829 GPa, does fall inside the band's [0.1,1] GPa — coincidence of
+> intervals, not agreement). Error direction, both ways: read as a tissue
+> modulus, the entry's 5.0e8 Pa **under-states** trabecular tissue stiffness
+> by ~3.4×; read as an apparent modulus, it is not comparable to this
+> measurement at all — a single-trabecula bending specimen has no pore space
+> for the apparent quantity to average over. What it does not close:
+> (i) the abstract gives **no density**, so nothing can be normalised the
+> way the apparent-modulus literature's density-squared fits would want
+> (`:could-not-obtain`); (ii) humeral trabeculae specifically — a one-site,
+> one-method measurement, not a survey of the band; (iii) the same
+> abstract's own validation control **failed**: manufactured synthetic
+> trabeculae of known material read 51.5 MPa, "two dimensions lower" than
+> the plastic's datasheet — the method's calibration check is recorded here,
+> so the 1678 MPa mean carries that doubt explicitly. **No constant moves**
+> — the 5.0e8 Pa stays `:representative` uncited, the edn is untouched, and
+> this joins Tendon and Liver as the third tissue of the uncited row with a
+> measured anchor.
+
 ### Why the disc, and not something from an anatomy list
 
 From a consumer, not from anatomy. `cloud-itonami/suji` computes a per-level

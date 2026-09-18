@@ -383,6 +383,68 @@ citation, 10 do not.**
 > — the 5.0e8 Pa stays `:representative` uncited, the edn is untouched, and
 > this joins Tendon and Liver as the third tissue of the uncited row with a
 > measured anchor.
+>
+> ⚠ *Annotated 2026-09-19 (bot/suji-anatomy, fourth tick on the row, propose
+> only): the Tendon measurement of 2026-09-18 gets its in-vivo counterweight —
+> two independent human in-vivo Young's moduli land ON the entry's scalar,
+> while the patellar in-vitro means sit far below it. The gap the patellar
+> paper opens is therefore in vitro vs in vivo, not the band.* Two readable
+> abstracts:
+>
+> 1. Maganaris CN, Paul JP, *In vivo human tendon mechanical properties*,
+>    **J Physiol 521(Pt 2):307-313, 1999**
+>    (doi:10.1111/j.1469-7793.1999.00307.x, PMID 10562354; abstract read
+>    2026-09-19 via the Europe PMC REST API; full text `:could-not-obtain`).
+>    Five males, tibialis anterior tendon, dynamometry + real-time
+>    ultrasonography + MRI moment arm: force 530 N and elongation 4.1 mm at
+>    maximum isometric load, stress 25 MPa at 2.5% strain, **"the tendon
+>    stiffness and Young's modulus at maximum isometric load were
+>    161 N mm-1 and 1.2 GPa"** — and the abstract's own reading is that
+>    "under physiological loading the TA tendon operates within the elastic
+>    'toe' region".
+> 2. Maganaris CN, Paul JP, *Tensile properties of the in vivo human
+>    gastrocnemius tendon*, **J Biomech 35(12):1639-1646, 2002**
+>    (doi:10.1016/s0021-9290(02)00240-3, PMID 12445617; abstract read
+>    2026-09-19 via the Europe PMC REST API; full text `:could-not-obtain`).
+>    Six men, plantarflexion contraction-relaxation, ultrasound elongation
+>    with in-vivo moment-arm force: **Young's modulus 1.16 ± 0.15 GPa**,
+>    hysteresis 18 ± 3%, over a force span 87.5 ± 8.5 N to 875 ± 85 N
+>    (elongation 1.7 ± 1 mm to 11.1 ± 3.1 mm, strain 0.8 ± 0.3% to
+>    4.9 ± 1%). The abstract itself cross-references the first paper:
+>    "very similar to the respective values recently obtained from in vivo
+>    measurements in the less highly stressed human tibialis anterior tendon
+>    (1.2 GPa and 19%)".
+>
+> Set against `resources/kami/biomech/tissues.edn`'s Tendon entry, whose
+> scalar is `:youngs-modulus` 1.2e9 Pa inside a band "[0.8, 1.5] GPa along
+> fibre direction": the in-vivo pair **matches the scalar** — 1.2 GPa
+> exactly, and 1.16 ± 0.15 GPa inside it — while Johnson et al 1994's
+> in-vitro patellar means (660 ± 266 / 504 ± 222 MPa) sit 1.8-2.4× below the
+> same scalar. Two readings that must stay distinct: (a) the scalar 1.2e9 Pa
+> is now an **in-vivo-anchored** number, not just a band convention — but
+> both in-vivo values are computed from estimated moment arms and
+> ultrasound excursions, a method with no clamped specimen to under-measure,
+> and their agreement is not independent of the shared method
+> (`:could-not-obtain` — neither abstract isolates moment-arm uncertainty
+> from tissue extensibility); (b) the in-vitro gap does not close: whether
+> cadaveric testing, fixation, or the toe-region ambiguity explains the
+> 504-660 MPa in-vitro means is not stated in either abstract
+> (`:could-not-obtain`), so the entry's band floor of 0.8 GPa is a boundary
+> between two measurement classes, not a single tissue's spread. Error
+> direction, both ways: if the in-vivo numbers describe the intact tendon,
+> the entry's scalar is right and the band's stated range is where the
+> in-vitro tradition ends; if the in-vitro numbers describe the substance,
+> the scalar over-states mid-substance stiffness. The two abstracts do not
+> adjudicate. What it does not close: (i) both in-vivo moduli are taken
+> **at or across maximum isometric load**, i.e. the upper end of the force
+> ramp — the toe-region modulus at lower load is curvilinear and lower, and
+> neither abstract gives it (`:could-not-obtain`); (ii) quasi-static ramp
+> loading only — the 18 ± 3% hysteresis says the tissue is rate-dependent
+> in the way a single scalar hides, the same viscoelastic seam the patellar
+> abstract showed with 46-50% stress relaxation; (iii) ankle tendons
+> specifically — a spinal consumer's tendon is not measured here. **No
+> constant moves** — the 1.2e9 Pa stays `:representative` uncited, the edn
+> is untouched, and this joins the row as the fourth measured anchor.
 
 ### Why the disc, and not something from an anatomy list
 

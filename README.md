@@ -384,6 +384,47 @@ citation, 10 do not.**
 > this joins Tendon and Liver as the third tissue of the uncited row with a
 > measured anchor.
 
+> ⚠ *Annotated 2026-09-19 (bot/suji-anatomy, propose only): a fourth tissue of
+> that uncited row meets a measured in-vivo modulus in the very quantity the
+> entry's own sentence names — with a unit ambiguity the source leaves open.*
+> The Skeletal-Muscle entry's `:source` reads "representative; passive skeletal
+> muscle shear modulus approx 10-50 kPa, near-incompressible (nu approx 0.49 in
+> vivo); effective E shown is 3G for isotropic reference only" with no author,
+> no year and no DOI. Rahnama L, Acik C, Dy C, Keslacy S, *Unilateral baseball
+> pitching: morphological and functional adaptations in the neck muscles*,
+> **Front Sports Act Living 7:1452412, 2025** (doi:10.3389/fspor.2025.1452412,
+> PMID 39995574, PMC11847819; full text read 2026-09-19 through the Europe PMC
+> REST fullTextXML endpoint, CC BY). Fourteen collegiate baseball pitchers
+> (21.86 ± 1.6 y) and fifteen controls (25.87 ± 5.10 y), seated, head and neck
+> relaxed, a linear probe placed on the C4 spinous process and slid laterally;
+> the elastography settings are stated as a musculoskeletal neck preset with
+> "a shear modulus range of up to 600 kPa". Table 2, control group, mean
+> resting stiffness, dominant/non-dominant: **semispinalis cervicis 37.5 ± 19.0
+> / 48.2 ± 29.0 kPa, cervical multifidus 32.7 ± 11.7 / 43.7 ± 25.6 kPa** —
+> within-group side differences not significant (trapezius 60.9/78.4, splenius
+> capitis 41.8/58.3, semispinalis capitis 36.2/60.2 kPa sit above them). Two
+> readings, because the paper's Methods sentence names the display range and
+> not the quantity displayed. Read as shear moduli (the paper's own wording):
+> the measured passive resting muscle G = 32.7–48.2 kPa sits **inside the
+> entry's own [10,50] kPa band** and **3.3–4.8× above the entry's
+> `:shear-modulus` scalar 1.0e4 Pa** — the scalar is parked at the band's
+> floor. Read as Young's-modulus-equivalents (the other common SWE display
+> convention, E ≈ 3G for a near-incompressible medium): the implied G =
+> 10.9–16.1 kPa still sits above the scalar, by 1.09–1.61×. Either reading
+> keeps the measured floor at or above the installed scalar; error direction
+> as the entry stands: a stiffness stated low **over-states compliance** for
+> the same stress. What it does not close: (i) two small dorsal neck muscles
+> at one level (C4), seated at rest, in 15 controls — a measured anchor, not a
+> survey of the [10,50] band over all skeletal muscle; (ii) SWE stiffness is a
+> dynamic probe-frequency quantity while the entry's scalar is quasi-static —
+> the same seam the Liver annotation carries, with no storage/loss split in
+> this source either (`:could-not-obtain`); (iii) the device display
+> convention is `:could-not-obtain`, so neither reading is preferred here.
+> **No constant moves** — the 1.0e4 Pa `:shear-modulus` and the 3.0e4 Pa
+> `:youngs-modulus` stay `:representative` uncited, the edn is untouched, and
+> this joins Tendon, Liver and Cancellous-Bone as the fourth tissue of the
+> uncited row with a measured anchor.
+
 ### Why the disc, and not something from an anatomy list
 
 From a consumer, not from anatomy. `cloud-itonami/suji` computes a per-level

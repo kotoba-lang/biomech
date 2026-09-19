@@ -487,6 +487,67 @@ citation, 10 do not.**
 > this joins Tendon, Liver and Cancellous-Bone as the fourth tissue of the
 > uncited row with a measured anchor.
 
+>
+> ⚠ *Annotated 2026-09-19 (bot/suji-anatomy, propose only): a fifth tissue of
+> that uncited row gets in-vivo MRE anchors — and the healthy numbers land ON
+> the entry's scalar, while the abstracts show the same brain reading 39%
+> differently depending on the reconstruction alone.* The Brain entry's
+> `:source` reads "representative; brain grey matter E approx 1-5 kPa per MR
+> elastography, near-incompressible" with no author, no year and no DOI. Three
+> readable abstracts:
+>
+> 1. Berman S, Westenberger A, Fehrenbach J, Flassbeck S, Schneider UC,
+>    Filser M, Hartmann CJ, Huppertz HJ, *Features of Idiopathic Intracranial
+>    Hypertension on MRI With MR Elastography: Prospective Comparison With
+>    Control Individuals and Assessment of Postintervention Changes*,
+>    **AJR Am J Roentgenol 2022** (doi:10.2214/ajr.22.27904, PMID 35822642;
+>    abstract read 2026-09-19 via the Europe PMC REST API; full text
+>    `:could-not-obtain`). Twenty-one female control individuals (median age
+>    29.1 y), 3T brain MRE: **median occipital-lobe stiffness 2.94 kPa** (the
+>    IIH cohort's 3.08 kPa is a patient number and is recorded here only as
+>    the same-acquisition bracket, not as a norm).
+> 2. *Mechanical properties of white matter tracts in aging assessed via
+>    anisotropic MR elastography*, **Imaging Neuroscience 2026**
+>    (doi:10.1162/imag.a.1156, PMID 41799680; abstract read 2026-09-19 via
+>    the Europe PMC REST API; full text `:could-not-obtain`). Young adults
+>    25.4 ± 2.2 y, anisotropic MRE: **shear stiffness perpendicular to axonal
+>    direction 3.00 ± 0.15 kPa** (anterior thalamic radiation) and **2.94 ±
+>    0.23 kPa** (forceps minor), with stiffness parallel to fibre direction
+>    higher by an average 12.1% between age groups.
+> 3. Hines L, Clayton B, Shah B, Bloy L, Mabray D, Detiger D, Voss HU,
+>    McGovern RA, *Robustness of MR Elastography in the Healthy Brain:
+>    Repeatability, Reliability, and Effect of Different Reconstruction
+>    Methods*, **J Magn Reson Imaging 2021** (doi:10.1002/jmri.27475, PMID
+>    33403750; abstract read 2026-09-19 via the Europe PMC REST API; full
+>    text `:could-not-obtain`). Fifteen healthy subjects, 50 Hz MRE: the
+>    same acquisitions read **39% higher stiffness under an FEM
+>    reconstruction than under a curl-based one** (P significant),
+>    repeatability coefficients 0.14/0.17 kPa whole-brain. The absolute
+>    whole-brain mean is **not in the abstract** (`:could-not-obtain`).
+>
+> Set against the entry: the two kPa-quantifying anchors land at **2.94-3.00
+> kPa, on the entry's scalar `:youngs-modulus` 3.0e3 Pa** — but the scalar
+> now carries three named caveats it does not state. (i) None of the three
+> abstracts isolates **grey matter**: the controls anchors are an
+> occipital-LOBE median and WHITE-MATTER-TRACT shears; the one study that
+> did measure cerebral grey matter by DWI-based virtual MRE (96 adults,
+> MRMS 2026, doi:10.2463/mrms.mp.2025-0040) publishes only per-year
+> percentage declines and no absolute kPa (`:could-not-obtain`). (ii) The
+> reconstruction spread — 39% from the same raw data — is wider than the
+> scalar's rounding could ever express, and the entry's band sentence names
+> no inversion method; a reader cannot tell which 3.0 kPa it means.
+> (iii) The same dynamic-storage/quasi-static seam the Liver annotation
+> carries applies here: these are 50 Hz-class dynamic quantities, so if the
+> scalar 3.0e3 Pa is read as a quasi-static E, the dynamic measurement
+> landing on it implies the scalar **over-states the tissue's quasi-static
+> stiffness** — the error direction is recorded, not adjudicated. To the
+> white-matter anchors specifically the entry's isotropic single scalar
+> also hides the measured ±12% direction dependence. **No constant moves**
+> — the 3.0e3 Pa `:youngs-modulus` stays `:representative` uncited, the edn
+> is untouched, and this joins Tendon, Liver, Cancellous-Bone and
+> Skeletal-Muscle as the fifth tissue of the uncited row with a measured
+> anchor (four tissues of the row remain unanchored).
+
 ### Why the disc, and not something from an anatomy list
 
 From a consumer, not from anatomy. `cloud-itonami/suji` computes a per-level

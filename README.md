@@ -548,6 +548,56 @@ citation, 10 do not.**
 > Skeletal-Muscle as the fifth tissue of the uncited row with a measured
 > anchor (four tissues of the row remain unanchored).
 
+> ⚠ *Annotated 2026-09-20 (bot/suji-anatomy, propose only): a sixth tissue of
+> that uncited row meets measured elastic constants in the very quantity the
+> scalar carries — and both measurements sit at or above the entry's band
+> ceiling.* The Cortical-Bone entry's `:source` reads "representative literature
+> value; cortical bone E in [15,20] GPa, density approx 1800-2000 kg/m^3" with
+> no author, no year and no DOI; the installed scalar is `:youngs-modulus`
+> 1.7e10 Pa. Two readable abstracts, both human femoral cortex, both ultrasound:
+
+> 1. Bensamoun S, Ho Ba Tho MC, Luu S, Gherbezza JM, de Belleval JF,
+>    *Spatial distribution of acoustic and elastic properties of human femoral
+>    cortical bone*, **J Biomech 37:2004** (doi:10.1016/j.jbiomech.2003.09.013,
+>    PMID 14996562; abstract read 2026-09-20 via the Europe PMC REST API; full
+>    text `:could-not-obtain`). One femur, transverse sections at 40-70% of the
+>    bone's length, four quadrants per section, 2.25 MHz contact transmission:
+>    longitudinal velocities 3548-3967 m/s, **axial elastic constants 18.5-33.1
+>    GPa**. The abstract's lower bound 18.5 GPa is already near the entry's band
+>    ceiling 20 GPa, and its upper bound is 1.95× the scalar 17 GPa. The spread
+>    is *within one bone* — the paper's own point, and the same failure a single
+>    scalar hides that the Brain annotation records at 39% from reconstruction
+>    alone.
+> 2. Malo MK, Rohrbach D, Isaksson H, Töyräs J, Jurvelin JS, Tamminen IS,
+>    Kröger H, Raum K, *Longitudinal elastic properties and porosity of cortical
+>    bone tissue vary with age in human proximal femur*, **Bone 53:2013**
+>    (doi:10.1016/j.bone.2013.01.015, PMID 23334084; abstract read 2026-09-20
+>    via the Europe PMC REST API; full text `:could-not-obtain`). Twenty-one men
+>    17-82 y (47.1 ± 17.8), 50 MHz scanning acoustic microscopy, 42 transverse
+>    cross-sections: **c33 of femoral-neck cortical tissue 35.3 GPa** (proximal
+>    shaft 33.8 GPa; the trabecular tissues 31.9-33.8 GPa sit inside the same
+>    bracket), declining with age (R^2 = 0.28-0.46, p<0.05).
+
+> Set against the entry: (i) **error direction as the entry stands: a modulus
+> stated low over-states compliance** — the scalar 1.7e10 Pa sits below both
+> abstracts' whole measured ranges (18.5-33.1 GPa and 35.3 GPa); (ii) the
+> scalar survives this only because neither measurement is the tissue a spine
+> consumer needs: both are **femoral** cortex; a vertebral body's thin cortical
+> shell is not measured in either abstract (`:could-not-obtain`), and no
+> abstract carrying a vertebral-shell GPa value was obtained in this pass; (iii)
+> Malo's c33 is a tissue-level longitudinal coefficient — a direction the
+> entry's isotropic scalar cannot name — and a small-probe 50 MHz quantity,
+> while Bensamoun's constants come from bulk-wave transmission on mm-scale
+> parallelepipeds at 2.25 MHz; the two techniques' 35.3 vs 18.5 GPa disagreement
+> on the same tissue class is itself part of the record; (iv) both are in
+> vitro, cadaveric — no in-vivo abstract carrying a GPa value for cortical bone
+> was found in this pass, so the entry's citation gap closes only at the
+> measured-constant level, not at the in-vivo level. **No constant moves** —
+> the 1.7e10 Pa `:youngs-modulus` stays `:representative` uncited, the edn is
+> untouched, and this joins Tendon, Liver, Cancellous-Bone, Skeletal-Muscle and
+> Brain as the sixth tissue of the uncited row with a measured anchor (three
+> tissues of the row remain unanchored: skin, cartilage, arterial wall).
+
 ### Why the disc, and not something from an anatomy list
 
 From a consumer, not from anatomy. `cloud-itonami/suji` computes a per-level

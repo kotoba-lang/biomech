@@ -598,6 +598,77 @@ citation, 10 do not.**
 > Brain as the sixth tissue of the uncited row with a measured anchor (three
 > tissues of the row remain unanchored: skin, cartilage, arterial wall).
 
+>
+> ⚠ *Annotated 2026-09-21 (bot/suji-anatomy, propose only): a seventh tissue of
+> that uncited row gets a measured in-vivo human modulus — and both measurements
+> sit far BELOW the entry's own band floor at exactly the load class the band's
+> sentence claims to describe.* The Skin entry's `:source` reads "representative;
+> skin low-strain effective E in [50,150] kPa, stiffens strongly with strain
+> (hyperelastic)" with no author, no year and no DOI; the installed scalar is
+> `:youngs-modulus` 1.0e5 Pa. Two readable abstracts, both in-vivo human volar
+> forearm, both very-light-load:
+>
+> 1. Zahouani H, Pailler-Mattei C, Sohm B, Vargiolu R, Cenizo V, Debret R,
+>    *Characterization of the mechanical properties of a dermal equivalent
+>    compared with human skin in vivo by indentation and static friction tests*,
+>    **Skin Res Technol 15(1), 2009** (doi:10.1111/j.1600-0846.2008.00329.x,
+>    PMID 19152581; abstract read 2026-09-21 via the Europe PMC REST API; full
+>    text `:could-not-obtain`). A bio-tribometer doing indentation and static
+>    friction at light normal load 0.5-2 g and contact pressure 0.5-2 kPa:
+>    **in-vivo total skin, 20 subjects aged 55-70, E\* = 8.3 ± 2.1 kPa, G\* =
+>    2.8 ± 0.8 kPa** (six dermal equivalents, E\* = 8.5 ± 1.74 kPa, sit on the
+>    same value — the in-vivo figure is not an outlier of the method).
+> 2. Boyer G, Pailler Mattei C, Molimard J, Pericoi M, Laquieze S, Zahouani H,
+>    *Non contact method for in vivo assessment of skin mechanical properties
+>    for assessing effect of ageing*, **Med Eng Phys 34(2), 2012**
+>    (doi:10.1016/j.medengphy.2011.07.007, PMID 21807547; abstract read
+>    2026-09-21 via the Europe PMC REST API; full text `:could-not-obtain`).
+>    Contactless air-flow indentation on the volar forearm at a 10 mN force:
+>    **reduced Young's modulus 14.38 ± 3.61 kPa** (young group, 23.2 ± 1.6 y)
+>    and **6.20 ± 1.45 kPa** (old group, 60.4 ± 2.4 y), two groups of healthy
+>    women, with the abstract stating the values "agree with other studies
+>    using classical or dynamic indentation".
+>
+> Set against the entry: the scalar 1.0e5 Pa is **12.0× the 8.3 kPa in-vivo
+> mean** and **6.9× the higher 14.38 kPa young-group mean** (arithmetic
+> `:representative` on published means and one installed scalar); the band
+> floor of 50 kPa is 6.0× the 8.3 kPa mean, 4.8× its +2.1 kPa upper edge, and
+> 2.8× the 17.99 kPa upper edge of the young-group measurement — no measured
+> value's ±SD span reaches even a fifth of the band's floor. Two readings that
+> must stay distinct: (a) the entry's own band sentence calls [50,150] kPa the
+> "LOW-strain effective E", and at the lightest human skin loads in this record
+> (0.5-2 g; 10 mN — the low-strain end by construction), the in-vivo modulus is
+> 6-14 kPa; so the band's floor is not a low-strain value by these two
+> measurements' lights — the band reads as a mid/high-strain band mislabeled as
+> low-strain. (b) The entry's own "stiffens strongly with strain (hyperelastic)"
+> is measured-direction consistent: neither abstract probes high strain, so the
+> stiffening mechanism the sentence names could yet carry the band's higher
+> numbers at higher strain — what fails is the low-strain LABEL, not
+> necessarily the 150 kPa ceiling. Error direction as the entry stands: a
+> stiffness stated high **under-states deformation** for the same stress. What
+> it does not close: (i) both moduli are **reduced/effective**
+> contact-mechanics quantities — the same group's companion paper
+> (Pailler-Mattei C, Bec S, Zahouani H, *In vivo measurements of the elastic
+> mechanical properties of human skin by indentation tests*, Med Eng Phys
+> 30(7), 2008, doi:10.1016/j.medengphy.2007.05.002, PMID 17869160; abstract
+> read 2026-09-21 via the Europe PMC REST API) shows a one-layer model
+> mis-describes the measurement and proposes a two-layer model, because the
+> indenter feels the subcutaneous layers too — so neither E\* nor the scalar is
+> a bare tissue Young's modulus (`:quantity-not-equatable`); (ii) load and
+> strain amplitude: 0.5-2 g and 10 mN only, no strain sweep or depth sweep in
+> either abstract (`:could-not-obtain`), so the hyperelastic stiffening
+> between 10 mN and the band's implied strain range is unmeasured here; (iii)
+> cohorts: 20 subjects 55-70 y in the first, two groups of healthy women with
+> n unstated in the second's abstract (`:could-not-obtain`), all volar forearm —
+> not a whole-body skin and not the seated-spine consumer this repo's disc
+> figures serve; (iv) the scalar 1.0e5 Pa could be right AT a higher strain,
+> and nothing here adjudicates that — the finding is against the entry's own
+> low-strain framing. **No constant moves** — the 1.0e5 Pa `:youngs-modulus`
+> stays `:representative` uncited, the edn is untouched, and this joins Tendon,
+> Liver, Cancellous-Bone, Skeletal-Muscle, Brain and Cortical-Bone as the
+> seventh tissue of the uncited row with a measured anchor (two tissues of the
+> row remain unanchored: cartilage, arterial wall).
+
 ### Why the disc, and not something from an anatomy list
 
 From a consumer, not from anatomy. `cloud-itonami/suji` computes a per-level

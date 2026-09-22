@@ -669,6 +669,81 @@ citation, 10 do not.**
 > seventh tissue of the uncited row with a measured anchor (two tissues of the
 > row remain unanchored: cartilage, arterial wall).
 
+> ⚠ *Annotated 2026-09-22 (bot/suji-anatomy, propose only): an eighth tissue of
+> that uncited row gets measured human aggregate moduli — and both the entry's
+> scalar and its band sit INSIDE the measured no-disease range, the first anchor
+> of the row where neither end of the entry over- or under-states by more than
+> ~5%.* The Cartilage entry's `:source` reads "representative; articular
+> cartilage compressive aggregate modulus approx 0.5-1.5 MPa,
+> hyperelastic/stiffening under load" with no author, no year and no DOI; the
+> installed scalar is `:youngs-modulus` 8.0e5 Pa. One readable primary, plus the
+> systematic review that tabulates the rest:
+>
+> 1. Keenan KE, Kourtis LC, Besier TF, Lindsey DP, Gold GE, Delp SL, Beaupre GS,
+>    *New resource for the computation of cartilage biphasic material properties
+>    with the interpolant response surface method*, **Comput Methods Biomech
+>    Biomed Eng 12(4):415-422, 2009** (doi:10.1080/10255840802654319, PMID
+>    19675978, PMC2858459; abstract read 2026-09-22 via the Europe PMC REST API;
+>    full text `:could-not-obtain` this session). Creep indentation, five sites
+>    across one human tibial plateau, biphasic (Mow) fits: verbatim, the sites
+>    "provided a representative range of aggregate moduli (**0.48-1.58 MPa**),
+>    Poisson's ratio (**0.00-0.05**) and permeability (1.7 x 10(-15)-5.4 x 10(-15)
+>    m4/N s) values found in human cartilage."
+> 2. Berni M, Marchiori G, Baleani M, *Biomechanics of the Human Osteochondral
+>    Unit: A Systematic Review*, **Materials (Basel) 17(7):1698, 2024**
+>    (doi:10.3390/ma17071698, PMID 38612211, PMC11012636; full text read
+>    2026-09-22 via the Europe PMC fullTextXML endpoint, CC BY). Its Table 2
+>    carries, in the no-disease condition: H_A **0.90 ± 0.43 MPa** (Kurkijärvi et
+>    al., Magn Reson Med 52:41-46, 2004, PMID 15236365 — knee, four sites,
+>    stress-relaxation compression, carried by the review's table; that
+>    abstract's own text carries topographic Young's/dynamic moduli only and no
+>    H_A, so the number is secondhand), H_A **0.48-1.58 MPa** (the Keenan row,
+>    agreeing with the primary read above), H_A **0.9 ± 0.4, range 0.15-2.14
+>    MPa** (Afara et al., Physiol Meas 36:1913-1928, 2015, PMID 26245143, knee
+>    indentation, no disease).
+>
+> Set against the entry: the scalar 8.0e5 Pa sits INSIDE the Keenan measured
+> range and at **0.89×** the review-carried no-disease mean 0.90 MPa (arithmetic
+> `:representative` on a published mean and the installed scalar); the entry's
+> own band [0.5, 1.5] MPa is crossed at BOTH ends by the measured range, but
+> barely — 0.48 MPa is 0.96× the band floor and 1.58 MPa is 1.05× the band
+> ceiling (arithmetic `:representative` on published extremes). Unlike Tendon
+> (measured means below the band), Skin (measured means far below the band's
+> floor), Cortical-Bone (measurements above the scalar) and Brain (reconstruction
+> spread wider than the scalar's rounding), this entry's band reads as a fair
+> summary of the no-disease aggregate modulus — and the scalar as a value the
+> literature actually lands on. The review's own structural finding reinforces
+> the entry's framing rather than contradicting it: "the compressive modulus
+> depends on the rate of loading, which can induce a significant increase in its
+> value" and degeneration "significantly decreases" the equilibrium modulus with
+> OARSI grade — the stiffening-with-load and condition-dependence the entry's
+> one-line sentence gestures at are the measured behaviours. What it does not
+> close: (i) every number here is KNEE (tibial plateau, femoral condyle) and one
+> HIP (femoral head) — no spinal facet or intervertebral cartilage is measured in
+> any readable row, so the entry's use as a generic "cartilage" scalar is anchored
+> at the limb, not at the spine; (ii) H_A is a confined/creep equilibrium modulus
+> while the entry's field is named `:youngs-modulus` — the entry's own `:source`
+> sentence already equates the two for this tissue and the numbers agree, but the
+> name is the loose half of that agreement (`:quantity-not-equatable` at the
+> field-name level); (iii) **Poisson's ratio: the entry carries 0.40; Keenan's
+> biphasic fits give 0.00-0.05** — a different constitutive class (biphasic
+> drained-fit nu versus a hyperelastic incompressible-side convention), so the
+> two are not equated here, but the direction is recorded: a consumer reading the
+> entry's 0.40 into a biphasic fit over-states lateral bulging, and reading
+> Keenan's 0.00-0.05 as a hyperelastic nu under-states it. (iv) one tibial
+> plateau, five sites, in the primary; the review rows are secondhand tabulation
+> (`:could-not-obtain` on the Kurkijärvi and Afara H_A values from their own
+> abstracts this session). Also repaired here, because this note is the first to
+> count the row carefully: **the seventh note's remainder was wrong** — it said
+> "two tissues of the row remain unanchored", but the table row carries TEN
+> entries (cortical and cancellous bone separate) and the third remainder,
+> **Adipose**, went unnamed; after this note two remain: arterial wall and
+> adipose. **No constant moves** — the 8.0e5 Pa scalar and the 0.40 nu stay
+> `:representative` uncited, the edn is untouched, and this joins Tendon, Liver,
+> Cancellous-Bone, Skeletal-Muscle, Brain, Cortical-Bone and Skin as the eighth
+> tissue of the uncited row with a measured anchor (two tissues of the row remain
+> unanchored: arterial wall, adipose).
+
 ### Why the disc, and not something from an anatomy list
 
 From a consumer, not from anatomy. `cloud-itonami/suji` computes a per-level

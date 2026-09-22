@@ -668,6 +668,61 @@ citation, 10 do not.**
 > Liver, Cancellous-Bone, Skeletal-Muscle, Brain and Cortical-Bone as the
 > seventh tissue of the uncited row with a measured anchor (two tissues of the
 > row remain unanchored: cartilage, arterial wall).
+> ⚠ *Annotated 2026-09-22 (bot/suji-anatomy, propose only): an eighth tissue of
+> that uncited row meets a measured modulus in the very quantity the entry names
+> — and the same low→high stiffening seam the Skin note recorded appears again,
+> here measured in the exact unit the entry carries (kPa), in the direction
+> below.* The Adipose-Tissue entry's `:source` reads "representative; adipose
+> tissue E approx 1-5 kPa, near-incompressible" with no author, no year and no
+> DOI; the installed scalar is `:youngs-modulus` 3.0e3 Pa. Pettenuzzo S, Belluzzi
+> E, Pozzuoli A, Macchi V, Porzionato A, Boscolo-Berto R, Ruggieri P, Berardo A,
+> Carniel EL, Fontanella CG, *Mechanical Behaviour of Plantar Adipose Tissue:
+> From Experimental Tests to Constitutive Analysis*, **Bioengineering 2023;11(1):42**
+> (doi:10.3390/bioengineering11010042, PMID 38247919, PMC10813593; full text read
+> 2026-09-22 via the PMC article page — the paper is CC BY). Unconfined
+> compression (plus indentation) on samples dissected from the plantar fat pads of
+> **seven subjects** — a mix of living patients who underwent lower-limb
+> amputation and donated (cadaver) bodies (age/BMI cohort middle-aged, not
+> reported) — 109 samples from four foot regions (heel pad 47, lateral 25, medial
+> 9, metatarsal 28), at room temperature. The paper fits an incompressible,
+> isotropic visco-hyperelastic (Ogden) constitutive model and reports the
+> **initial (0-25% compression strain) and final (47-50%) compression elastic
+> moduli** by region and by strain rate (Tables 3-4, in kPa). At the lowest rate
+> (7%/s), the initial moduli are **0.73 / 0.53 / 0.29 / 0.25 kPa** (heel pad /
+> lateral / medial / metatarsal) and the final moduli **690.88 / 551.82 / 833.79 /
+> 352.91 kPa**; the full initial span across all regions and rates is 0.25-1.97
+> kPa and the full final span 352.91-944.67 kPa (low-strain values rise with rate,
+> high-strain values do not). Set against the entry: (i) every low-strain measured
+> value sits at or below the band's own floor of 1 kPa — the 0.73 kPa heel-pad
+> floor is 1.37× BELOW it — and sits **4.1×-12.0× BELOW the installed scalar**
+> 3.0e3 Pa (arithmetic `:representative` on one installed scalar and the paper's
+> published means); (ii) the high-strain values sit **70.6×-188.9× ABOVE the band
+> ceiling** of 5 kPa, and the low→high jump (≈480-1410× within a specimen) is
+> exactly the strain-dependent stiffening a single 3.0e3 Pa scalar hides — the
+> same seam the 2026-09-21 Skin note recorded, reproduced in adipose in the entry's
+> own unit. Error direction as the entry stands, both ways: a stiffness stated
+> high **over-states low-strain stiffness and under-states compliance** at the
+> tissue's resting stiffness (the measured low-strain end is below both the band
+> floor and the scalar), while the same scalar **under-states the high-strain
+> (47-50%) modulus by two orders of magnitude** — the entry is low at the bottom
+> of its own band and low at the top; the 3.0e3 Pa is plausible only as a
+> mid-strain value, and nothing here adjudicates which strain it names. What it
+> does not close: (i) this is **plantar (foot) adipose specifically** — the paper
+> itself notes the plantar pad is less stiff than infrapatellar and abdominal
+> adipose — so it anchors the "adipose tissue" label at one site and does not
+> survey the band over trunk/abdominal adipose, and no same-unit trunk value is
+> carried in this pass (`:could-not-obtain`); (ii) n = 7, a single site, tested
+> in vitro at room temperature, and the response is time-dependent (≈75-87%
+> stress relaxation by 300 s in the same samples) — a single quasi-static scalar
+> hides that viscoelasticity, the same way it hides the hyperelastic stiffening;
+> (iii) the paper's own abstract quotes region-level *final* moduli in **MPa**
+> (e.g. medial 89 ± 77 MPa), a different scale from the kPa tables used here — the
+> abstract's MPa figure is a separate reading, not equated to the tables. **No
+> constant moves** — the 3.0e3 Pa `:youngs-modulus` stays `:representative`
+> uncited, the edn is untouched (sha256 05706f6d…), and this joins Tendon, Liver,
+> Cancellous-Bone, Skeletal-Muscle, Brain, Cortical-Bone and Skin as the eighth
+> tissue of the uncited row with a measured anchor. The remainder here is:
+> cartilage (open in the parallel bot PR) and arterial wall.
 
 ### Why the disc, and not something from an anatomy list
 

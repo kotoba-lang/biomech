@@ -799,6 +799,86 @@ citation, 10 do not.**
 > tissue of the uncited row with a measured anchor (two tissues of the row remain
 > unanchored: arterial wall, adipose).
 
+> ⚠ *Annotated 2026-09-23 (bot/suji-anatomy, propose only): the last unanchored
+> tissue of that uncited row — the Arterial-Wall entry — now has a measured
+> human aortic modulus, and the entry sits ABOVE it: the `:source` sentence's
+> own band "media incremental E approx 0.3-1 MPa" starts at 0.97× the
+> maximum measured ex-vivo modulus (its floor already exceeds everything
+> measured in the normal population), and the installed scalar 5.0e5 Pa is
+> 2.3×-2.5× the measured ex-vivo and 2.8×-3.0× the measured in-vivo
+> effective Young's moduli of the human aortic wall (1.6×-3.6× across the
+> per-donor ex-vivo values, 1.8×-5.4× across the in-vivo values).* The
+> Arterial-Wall entry's `:source` reads "representative; arterial
+> wall (media) incremental E approx 0.3-1 MPa, highly anisotropic &
+> hyperelastic" with no author, no year and no DOI; the installed scalar is
+> `:youngs-modulus` 5.0e5 Pa (no `:provenance` band carried). Guo X, Yang Y,
+> Wang L, Tang D, Sun H, *Non-invasive estimation of material properties of
+> normal and dissected human ascending aortas in vivo: comparison with the ex
+> vivo tensile experiment*, **Frontiers in Bioengineering and Biotechnology
+> 13:1689692, 2026** (doi:10.3389/fbioe.2025.1689692, PMID 41582955,
+> PMC12824021; full text read 2026-09-23 via the Frontiers article page and the
+> PMC copy — the paper is CC BY 4.0). Planar biaxial tensile testing (five
+> loading protocols, 37 °C, 10 pre-conditioning cycles) on **10 ascending
+> aortic specimens** — five patients with type-A aortic dissection and five
+> organ donors without aortic disease — fitted with an anisotropic
+> Mooney–Rivlin model (R² > 0.9188 for all), plus an image-based iterative
+> algorithm that determines the in-vivo material parameters by matching
+> systolic and diastolic lumen circumferences from TEE against CT-based
+> models. The paper reports the effective Young's modulus as the slope of the
+> stress–stretch fit over stretch [1.0, 1.3], in the circumferential (YMc) and
+> axial (YMa) directions. In the five normal donors, ex vivo: YMc **163.27 /
+> 208.60 / 219.94 / 182.46 / 310.02 kPa** and YMa **138.73 / 208.35 / 219.68 /
+> 171.96 / 241.95 kPa** (means 216.9 / 196.1 kPa); in vivo from the same
+> subjects: YMc **108.67-270.60 kPa** (mean 181.7) and YMa **92.67-217.57 kPa**
+> (mean 166.1), the in-vivo estimates running 5-33% below the ex-vivo values
+> (median relative error −16.4% in YMc, recomputed; the paper's own M02
+> setting reports −29.4%). The measured anisotropy index AI_YM in the normal
+> donors is **0.00-0.25** (the entry's "highly anisotropic" label is not
+> supported at the healthy end; the high-anisotropy cases AD3/AD4, AI 1.43-1.84
+> ex vivo, are the atherosclerotic/dissected specimens). On the installed
+> scalar, the precise per-direction figures behind the ranges above: 5.0e5 Pa
+> is **2.31× the ex-vivo circumferential mean and 2.55× the ex-vivo axial
+> mean** (1.61×-3.06× across the five normal donors'
+> ex-vivo YMc, 2.07×-3.60× across YMa; 1.85×-2.75× / 2.30×-3.01× across the
+> in-vivo values, arithmetic `:representative` on the paper's published means
+> and the installed scalar) — the scalar over-states aortic-wall stiffness by
+> more than a factor of two in every direction and condition, so a consumer
+> using it **under-states wall distension and over-states wall stress for a
+> given transmural pressure**; (ii) the `:source` sentence's own band "0.3-1
+> MPa" is crossed at its floor — the 0.3 MPa floor is **0.97× the maximum
+> measured ex-vivo YMc** (310.02 kPa) and 1.24× the maximum ex-vivo YMa — so
+> the sentence's lower bound already exceeds what was measured in the normal
+> population, while its 1 MPa upper bound sits 3.2×-7.2× above the measured
+> means; the band is stated high at both ends relative to the healthy aorta
+> (and the 3.4 MPa YMc of atherosclerotic specimen AD4 is the one measured
+> value above the ceiling, in a diseased wall). What it does not close: (i)
+> this is the **ascending (proximal thoracic) aorta** — the entry is labelled
+> generically "arterial wall (media)" and is a whole-vasculature scalar, so the
+> measurement anchors one named site, not the band over carotid/femoral/peripheral
+> arteries (the paper's own intro cites Azadani 2013's ascending-aorta biaxial
+> means YMc 3,041.4 ± 1,673.7 / YMa 3,498.2 ± 2,456.8 kPa in the healthy
+> comparison cohort, a separate reading on a different specimen pool, not
+> equated here); (ii) the measured quantity is an **effective (secant-over-
+> [1.0,1.3]-stretch) Young's modulus from a biaxial fit**, not the incremental
+> pressure–radius modulus the entry's sentence names — the two agree in
+> magnitude class but are different constructions (`:quantity-not-equatable` at
+> the field-name level, the same seam the Cartilage note recorded for H_A vs
+> `:youngs-modulus`); (iii) the in-vivo values are TEE/CT-derived inverse
+> estimates with their own relative error (5-33% vs ex vivo, the paper's own
+> figure), so the in-vivo column is recorded with its error direction, not
+> substituted; (iv) n = 5 normal + 5 dissected, ascending aorta only, 37 °C ex
+> vivo; the entry's 0.45 Poisson ratio and 1060 kg/m³ density are untouched and
+> unanchored this pass. **No constant moves** — the 5.0e5 Pa `:youngs-modulus`
+> and the "0.3-1 MPa" `:source` sentence stay `:representative` uncited, the edn
+> is byte-identical (sha256 05706f6d…, 13 entries), and this is the **tenth**
+> and final tissue of the uncited row with a measured anchor — joining Tendon,
+> Liver, Cancellous-Bone, Skeletal-Muscle, Brain, Cortical-Bone, Skin,
+> Adipose-Tissue and Cartilage (the two 2026-09-22 notes above both read
+> "eighth" because each was written with the other still open; after both
+> merged, nine are anchored and this is the tenth). All ten remain
+> `:representative` uncited, and the row is now fully anchored: zero remain
+> unanchored.
+
 ### Why the disc, and not something from an anatomy list
 
 From a consumer, not from anatomy. `cloud-itonami/suji` computes a per-level

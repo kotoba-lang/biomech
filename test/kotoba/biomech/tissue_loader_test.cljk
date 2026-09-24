@@ -4,7 +4,7 @@
   Phase-2.2 additions cartilage, ligament, vasculature, brain, adipose, and the
   Phase-2.3 intervertebral-disc pair)."
   (:require [kotoba.test :refer [deftest is testing]]
-            [clojure.walk :as walk]
+            [kotoba.lang.coll :as walk]
             [kotoba.biomech.tissue-loader :as loader]
             [kotoba.biomech.tissue :as tissue]))
 

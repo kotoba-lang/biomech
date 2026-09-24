@@ -3,7 +3,7 @@
   tissue catalogue (cortical/cancellous bone, muscle, skin, organ, tendon, the
   Phase-2.2 additions cartilage, ligament, vasculature, brain, adipose, and the
   Phase-2.3 intervertebral-disc pair)."
-  (:require [clojure.test :refer [deftest is testing]]
+  (:require [kotoba.test :refer [deftest is testing]]
             [clojure.walk :as walk]
             [kotoba.biomech.tissue-loader :as loader]
             [kotoba.biomech.tissue :as tissue]))

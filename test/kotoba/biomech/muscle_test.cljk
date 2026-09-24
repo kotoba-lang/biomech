@@ -1,5 +1,5 @@
 (ns kotoba.biomech.muscle-test
-  (:require [clojure.test :refer [deftest is]]
+  (:require [kotoba.test :refer [deftest is]]
             [kotoba.biomech.muscle :as muscle]))
 
 (defn- rel= [a b] (< (Math/abs (- a b)) 1.0e-9))

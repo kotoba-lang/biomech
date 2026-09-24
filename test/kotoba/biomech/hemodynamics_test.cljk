@@ -1,5 +1,5 @@
 (ns kotoba.biomech.hemodynamics-test
-  (:require [clojure.test :refer [deftest is]]
+  (:require [kotoba.test :refer [deftest is]]
             [kotoba.biomech.hemodynamics :as hemodynamics]))
 
 (deftest obstacle-drag-is-finite-and-positive-test

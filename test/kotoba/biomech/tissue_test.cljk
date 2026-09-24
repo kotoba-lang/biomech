@@ -1,5 +1,5 @@
 (ns kotoba.biomech.tissue-test
-  (:require [clojure.test :refer [deftest is testing]]
+  (:require [kotoba.test :refer [deftest is testing]]
             [kotoba.biomech.tissue :as tissue]))
 
 (def cortical

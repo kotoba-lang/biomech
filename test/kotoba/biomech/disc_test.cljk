@@ -1,5 +1,5 @@
 (ns kotoba.biomech.disc-test
-  (:require [clojure.test :refer [deftest is testing]]
+  (:require [kotoba.test :refer [deftest is testing]]
             [kotoba.biomech.disc :as disc]))
 
 ;; Local fixtures mirroring the shipped presets, so this namespace stays pure

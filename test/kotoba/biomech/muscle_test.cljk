@@ -1,5 +1,5 @@
 (ns kotoba.biomech.muscle-test
-  (:require [kotoba.test :refer [deftest is]]
+  (:require [kotoba.lang.error :as kerror] [kotoba.test :refer [deftest is]]
             [kotoba.biomech.muscle :as muscle]))
 
 (defn- rel= [a b] (< (Math/abs (- a b)) 1.0e-9))
@@ -80,7 +80,7 @@
            (* (:mass p) isometric)))))
 
 (deftest force-velocity-requires-positive-vmax-test
-  (is (thrown? #?(:clj clojure.lang.ExceptionInfo :cljs js/Error)
+  (is (thrown? js/Error
                (muscle/force-velocity-factor -0.1 0.0))))
 
 (deftest activation-dynamics-test
@@ -284,5 +284,5 @@
   ;; A passive model this namespace does not implement must not fall through
   ;; to a default and be reported as a result.
   (let [p (assoc (muscle/make-params) :passive-model :not-a-model)]
-    (is (thrown? #?(:clj clojure.lang.ExceptionInfo :cljs cljs.core/ExceptionInfo)
+    (is (thrown? kerror/ExceptionInfo
                  (muscle/passive-force 0.15 p)))))

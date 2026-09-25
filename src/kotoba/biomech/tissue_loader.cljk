@@ -11,7 +11,7 @@
   Callers on cljs/SCI/GraalVM hosts read the same EDN file via their own
   host's I/O and pass the parsed value to kotoba.biomech.tissue/find-tissue."
   (:require [kotoba.lang.edn :as edn]
-            [clojure.java.io :as io]))
+            [kotoba.io :as io]))
 
 (defn presets-resource
   "Returns the parsed presets map from the classpath resource, or nil if
